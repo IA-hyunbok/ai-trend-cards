@@ -113,3 +113,19 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     conversation_id: str
     reply: str
+
+
+class CardItem(BaseModel):
+    title: str
+    title_ko: str
+    summary_ko: str
+    url: str
+    points: int
+    comments: int = 0
+
+
+class Card(BaseModel):
+    date: dt.date = Field(description="발행일(KST)")
+    source_day: dt.date = Field(description="글 작성일(UTC)")
+    items: list[CardItem]
+    posted_to_discord: bool

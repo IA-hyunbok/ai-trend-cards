@@ -209,7 +209,7 @@ GitHub Actions (매일 KST 08:00 = UTC 23:00)
 | M0 기획·저장소 | ✅ |
 | M1 data CRUD + summary + HN 시드 | ✅ 2026-10-14 — 130건(06-05~10-12), 5개 엔드포인트·409/404/422 확인 |
 | M2 conversations + chat | ✅ 2026-10-14 — COPA gpt-4o로 요약 반영 답변·이어 대화·자동 저장 확인 |
-| M3 cards + 디스코드 | 로컬에서 publish → 디스코드 채널에 카드 5장 |
+| M3 cards + 디스코드 | ✅ 2026-10-14 — 원문 og:description 근거 요약, 디스코드 임베드 5장, 같은 날 재호출 시 중복 발송 없음. COPA는 JSON 모드 미지원 → 프롬프트 JSON + 실패 시 원문 제목 폴백 |
 | M4 프론트 | 5개 영역 로컬 동작, 모바일 폭 |
 | M5 배포 | Render·Vercel·Actions 스케줄 1회 성공 |
 | M6 README·스크린샷 | 미션 항목 전부 |

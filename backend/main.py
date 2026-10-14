@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 
 load_dotenv()
 
-from routers import chat, conversations, data  # noqa: E402  chat_service가 import 시 env를 읽는다
+from routers import cards, chat, conversations, data  # noqa: E402  chat_service가 import 시 env를 읽는다
 log = logging.getLogger("uvicorn.error")
 
 app = FastAPI(title="IT 트렌드 카드 API", description="HN 인기 글 기반 IT 화제도 시계열 + AI 비서")
@@ -23,6 +23,7 @@ app.add_middleware(
 app.include_router(data.router)
 app.include_router(conversations.router)
 app.include_router(chat.router)
+app.include_router(cards.router)
 
 
 @app.exception_handler(Exception)
