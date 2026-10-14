@@ -213,7 +213,11 @@ API 주소 주입: 정적 사이트는 Vercel 환경변수를 런타임에 못 �
 | M6 | 보너스 | 아래 |
 
 ### 보너스 계획
-1. **Function Calling + MCP**: tools = `get_summary`, `get_data_range(start, end)`, `list_conversations`. "3월 초 환율은?"처럼 요약에 없는 구간 질문에서 GPT가 `get_data_range`를 부르는 것을 근거로 README에 흐름 정리. 같은 도구를 `backend/mcp_server.py`(공식 `mcp` 패키지)로 노출해 Claude Desktop에서 호출 검증
+1. **Function Calling + MCP**: tools = `get_summary`, `get_data_range(start, end)`, `list_conversations`, `search_manual(query)`. "3월 초 환율은?"처럼 요약에 없는 구간 질문에서 GPT가 `get_data_range`를 부르는 것을 근거로 README에 흐름 정리. 같은 도구를 `backend/mcp_server.py`(공식 `mcp` 패키지)로 노출해 Claude Desktop에서 호출 검증
+   - **`search_manual` — 코디세이 매뉴얼 Q&A** (2026-10-14 결정: 매뉴얼 챗봇을 주제로 삼지 않고 보너스 도구로 붙인다. 주제로 삼으면 시계열·summary 요건과 동료평가 항목이 어긋난다)
+   - 출처: 공개해도 되는 문서만 `backend/manual/*.md`로 둔다. **RESUME `위키/` 원문은 넣지 않는다** — 운영 사고·인프라 감사 등 내부 기록이고, 저장소와 배포본이 공개다. 어떤 문서를 넣을지는 착수 시점에 사용자 확인
+   - 검색: 문서를 제목 단위로 잘라 키워드 일치 점수로 상위 3개를 반환(벡터DB 없음). ponytail: 문서 수십 개까지는 키워드로 충분, 동의어 질문에서 못 찾으면 임베딩 검토
+   - 라우팅 근거: 환율 질문은 요약/`get_data_range`, "동료평가 어떻게 해?" 같은 코디세이 이용 질문은 `search_manual` — README에 질문별 호출 도구 표로 정리
 2. **인사이트·UX**: summary에 `latest_percentile`·`change_7d_pct` 추가(이미 설계에 포함), SVG 꺾은선 그래프(라이브러리 없이), CSV 내보내기(`Blob` 다운로드), 다크 모드 토글
 
 ## 12. 준비물 (사용자)
