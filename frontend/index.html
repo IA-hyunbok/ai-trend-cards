@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ko" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IT 트렌드 카드</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <script>try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
+</head>
+<body>
+  <div id="wake" class="banner" hidden>무료 서버를 깨우는 중입니다. 첫 접속은 최대 1분 걸릴 수 있어요.</div>
+  <div id="toast" class="toast" role="alert" hidden></div>
+
+  <header class="top">
+    <div class="brand"><span class="logo">Y</span><span>IT 트렌드 카드</span></div>
+    <dl id="summary" class="summary" aria-label="데이터 요약">
+      <div><dt>기간</dt><dd class="skeleton">&nbsp;</dd></div>
+    </dl>
+    <button id="theme" class="icon-btn" type="button" aria-label="테마 전환">◐</button>
+  </header>
+
+  <main class="layout">
+    <!-- 대화 기록 -->
+    <section id="panel-history" class="panel history" aria-labelledby="h-history">
+      <div class="panel-head">
+        <h2 id="h-history">대화 기록</h2>
+        <button id="new-chat" class="btn btn-ghost" type="button">새 대화</button>
+      </div>
+      <ul id="conversations" class="conv-list"></ul>
+    </section>
+
+    <!-- 카드 + 채팅 -->
+    <section class="center">
+      <section id="panel-cards" class="panel cards" aria-labelledby="h-cards">
+        <div class="panel-head">
+          <h2 id="h-cards">오늘의 카드</h2>
+          <span id="cards-date" class="meta"></span>
+        </div>
+        <ol id="cards" class="card-strip"></ol>
+      </section>
+
+      <section id="panel-chat" class="panel chat" aria-labelledby="h-chat">
+        <div class="panel-head">
+          <h2 id="h-chat">AI 비서</h2>
+          <span id="chat-title" class="meta">새 대화</span>
+        </div>
+        <div id="messages" class="messages" aria-live="polite"></div>
+        <form id="chat-form" class="chat-form">
+          <label for="chat-input" class="sr-only">메시지</label>
+          <textarea id="chat-input" rows="1" maxlength="1000" placeholder="요즘 IT 쪽 뭐가 뜨거워?" required></textarea>
+          <button class="btn btn-primary" type="submit">보내기</button>
+        </form>
+      </section>
+    </section>
+
+    <!-- 데이터 관리 -->
+    <section id="panel-data" class="panel data" aria-labelledby="h-data">
+      <div class="panel-head">
+        <h2 id="h-data">데이터 관리</h2>
+        <span id="data-count" class="meta"></span>
+      </div>
+      <form id="data-form" class="data-form">
+        <div class="field">
+          <label for="f-date">날짜</label>
+          <input id="f-date" type="date" required>
+        </div>
+        <div class="field">
+          <label for="f-value">화제도</label>
+          <input id="f-value" type="number" min="0" max="1000" required>
+        </div>
+        <div class="field wide">
+          <label for="f-memo">메모 (1위 헤드라인)</label>
+          <input id="f-memo" type="text" maxlength="300">
+        </div>
+        <div class="form-actions wide">
+          <button id="data-cancel" class="btn btn-ghost" type="button" hidden>취소</button>
+          <button id="data-submit" class="btn btn-primary" type="submit">추가</button>
+        </div>
+      </form>
+      <ul id="data-list" class="data-list"></ul>
+    </section>
+  </main>
+
+  <nav class="tabs" aria-label="화면 전환">
+    <button type="button" data-tab="panel-cards">카드</button>
+    <button type="button" data-tab="panel-chat" aria-current="page">채팅</button>
+    <button type="button" data-tab="panel-data">데이터</button>
+    <button type="button" data-tab="panel-history">기록</button>
+  </nav>
+
+  <script src="config.js" onerror="void 0"></script>
+  <script src="app.js"></script>
+</body>
+</html>
