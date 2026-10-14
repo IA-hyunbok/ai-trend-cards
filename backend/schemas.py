@@ -1,4 +1,5 @@
 import datetime as dt
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -67,3 +68,48 @@ class Summary(BaseModel):
     trend: str
     monthly_avg: list[MonthAvg]
     recent_headlines: list[Headline]
+
+
+class Message(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=4000)
+    ts: dt.datetime | None = None
+
+
+class ConversationCreate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    title: str | None = Field(None, max_length=100, description="비우면 첫 메시지 앞 30자")
+    messages: list[Message] = Field(min_length=1, max_length=200)
+
+
+class ConversationCreated(BaseModel):
+    id: str
+
+
+class ConversationMeta(BaseModel):
+    """목록용: messages는 포함하지 않는다. 불러오기는 GET /api/conversations/{id}."""
+    id: str
+    title: str
+    updated_at: dt.datetime
+    message_count: int
+
+
+class Conversation(BaseModel):
+    id: str
+    title: str
+    created_at: dt.datetime
+    updated_at: dt.datetime
+    messages: list[Message]
+
+
+class ChatRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    message: str = Field(min_length=1, max_length=1000, examples=["요즘 IT 쪽 분위기 어때?"])
+    conversation_id: str | None = Field(None, description="이어서 대화할 때. 비우면 새 대화를 만든다")
+
+
+class ChatResponse(BaseModel):
+    conversation_id: str
+    reply: str

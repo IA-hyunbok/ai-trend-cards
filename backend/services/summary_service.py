@@ -38,9 +38,11 @@ def _trend(values: list[int]) -> str:
     recent, base = values[-TREND_WINDOW:], values[-(TREND_WINDOW + BASE_WINDOW):-TREND_WINDOW]
     if not base:
         return "판단 보류 (데이터 부족)"
-    pct = (mean(recent) - mean(base)) / mean(base) * 100 if mean(base) else 0.0
+    r, b = mean(recent), mean(base)
+    pct = (r - b) / b * 100 if b else 0.0
     label = "유지" if abs(pct) <= FLAT_PCT else ("상승" if pct > 0 else "하락")
-    return f"{label} (최근 {TREND_WINDOW}일 평균이 직전 {BASE_WINDOW}일 대비 {pct:+.1f}%)"
+    # 평균값을 같이 넣는다: 비율만 주면 GPT가 평균을 역산해 지어낸다(2026-10-14 확인)
+    return f"{label} (최근 {TREND_WINDOW}일 평균 {r:.1f} vs 직전 {BASE_WINDOW}일 평균 {b:.1f}, {pct:+.1f}%)"
 
 
 def build_summary() -> dict:

@@ -11,7 +11,7 @@ s = summarize(rows)
 assert s["count"] == 35
 assert s["period"] == "2026-08-01 ~ 2026-09-07"
 assert s["metrics"]["max"]["value"] == 20 and s["metrics"]["min"]["value"] == 10
-assert s["trend"].startswith("상승") and "+100.0%" in s["trend"], s["trend"]
+assert s["trend"] == "상승 (최근 7일 평균 20.0 vs 직전 28일 평균 10.0, +100.0%)", s["trend"]
 assert s["monthly_avg"] == [{"month": "2026-08", "avg": 10.0}, {"month": "2026-09", "avg": 20.0}]
 assert s["recent_headlines"][0] == {"date": "2026-09-07", "memo": "h7"}  # 최신이 먼저, 빈 memo 제외
 assert len(s["recent_headlines"]) == 7
