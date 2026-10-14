@@ -56,8 +56,7 @@ COPA 확인(2026-10-14): `/v1/chat/completions` OpenAI 호환, `gpt-4o`·`gpt-5`
 ai-trend-cards/
 ├── backend/
 │   ├── main.py              # 앱, CORS, 라우터 등록, /health
-│   ├── config.py
-│   ├── db.py                # Firestore 클라이언트
+│   ├── db.py                # Firestore 클라이언트 (env 로드 포함, 별도 config.py 없음)
 │   ├── schemas.py           # Pydantic 모델
 │   ├── routers/             # HTTP 계층: 검증·상태코드만
 │   │   ├── data.py
@@ -208,7 +207,7 @@ GitHub Actions (매일 KST 08:00 = UTC 23:00)
 | 단계 | 완료 기준 |
 |---|---|
 | M0 기획·저장소 | ✅ |
-| M1 data CRUD + summary + HN 시드 | 로컬 /docs 동작, Firestore 120건+ |
+| M1 data CRUD + summary + HN 시드 | ✅ 2026-10-14 — 130건(06-05~10-12), 5개 엔드포인트·409/404/422 확인 |
 | M2 conversations + chat | Swagger에서 요약 반영 답변 + 저장 |
 | M3 cards + 디스코드 | 로컬에서 publish → 디스코드 채널에 카드 5장 |
 | M4 프론트 | 5개 영역 로컬 동작, 모바일 폭 |
