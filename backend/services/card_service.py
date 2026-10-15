@@ -105,7 +105,12 @@ def publish() -> dict:
     card_date = dt.datetime.now(KST).date().isoformat()
 
     # 1. 시계열을 하루 늘린다 (점수가 굳은 이틀 전)
-    data_service.upsert_many([daily_row(utc_today - dt.timedelta(days=2))])
+    stat_day = utc_today - dt.timedelta(days=2)
+    data_service.upsert_many([daily_row(stat_day)])
+    try:
+        day_cards(stat_day)  # 캘린더에서 바로 뜨도록 미리 만든다(처음 조회 때 만들면 10초)
+    except Exception:
+        log.exception("day cards failed %s", stat_day)
 
     ref = COL.document(card_date)
     existing = ref.get()
