@@ -1,0 +1,22 @@
+# 매일 KST 08:00 카드 발행 (수집 → GPT 카드 → Firestore → 디스코드)
+name: daily-cards
+
+on:
+  schedule:
+    - cron: "0 23 * * *"  # UTC 23:00 = KST 08:00
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Wake Render (free plan cold start)
+        run: curl -fsS --retry 6 --retry-delay 10 --retry-all-errors -m 90 "${{ secrets.API_BASE_URL }}/health"
+      - name: Publish
+        # 같은 날 재호출해도 서버가 중복 발송하지 않으므로 재시도해도 안전하다
+        run: |
+          curl -fsS --retry 1 --retry-delay 30 --retry-all-errors -m 240 -X POST \
+            -H "X-Cron-Secret: ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.API_BASE_URL }}/api/cards/publish" -o card.json
+          python3 -c "import json;c=json.load(open('card.json'));print(c['date'],'items',len(c['items']),'blogs',len(c.get('blogs',[])),'discord',c['posted_to_discord'])"
