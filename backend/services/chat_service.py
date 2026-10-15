@@ -17,11 +17,11 @@ TOOL_ROUNDS = 3  # 도구 호출 왕복 상한(무한 루프 방지)
 TOOLS = [
     {"type": "function", "function": {
         "name": "get_summary",
-        "description": "저장된 HN 화제도 데이터 전체 요약(기간, 평균, 최고/최저, 추세, 월별 평균, 최근 헤드라인)을 다시 가져온다.",
+        "description": "저장된 HN 화제도 데이터 전체 요약(기간, 평균, 최고/최저, 추세, 월별 평균, 최근 일별 트렌드)을 다시 가져온다.",
         "parameters": {"type": "object", "properties": {}}}},
     {"type": "function", "function": {
         "name": "get_data_range",
-        "description": "특정 기간의 일별 화제도(value)와 1위 헤드라인(memo)을 가져온다. 요약에 없는 날짜나 기간을 물으면 사용한다. 최대 100일.",
+        "description": "특정 기간의 일별 화제도(value), 그날 트렌드 한 줄(memo), 1위 글 원제(top)를 가져온다. 요약에 없는 날짜나 기간을 물으면 사용한다. 최대 100일.",
         "parameters": {"type": "object", "properties": {
             "start": {"type": "string", "description": "시작일 YYYY-MM-DD"},
             "end": {"type": "string", "description": "종료일 YYYY-MM-DD"}},
@@ -51,7 +51,7 @@ def run_tool(name: str, args: dict):
     raise ValueError(f"unknown tool {name}")
 
 SYSTEM_TEMPLATE = """당신은 IT 트렌드 분석 비서입니다. 아래는 사용자가 모아 둔 Hacker News 화제도 데이터 요약입니다.
-화제도(value) = 그날 작성된 글 중 100점 이상 받은 인기 글 수, 헤드라인 = 그날 1위 글 제목입니다.
+화제도(value) = 그날 작성된 글 중 100점 이상 받은 인기 글 수, 트렌드 = 그날 인기 글들을 한 문장으로 정의한 것입니다.
 
 [사용자 데이터 요약]
 - 데이터 기간: {period}
@@ -62,12 +62,12 @@ SYSTEM_TEMPLATE = """당신은 IT 트렌드 분석 비서입니다. 아래는 �
 - 최신: {latest_date} {latest_value}건
 - 최근 트렌드: {trend}
 - 월별 평균: {monthly}
-- 최근 헤드라인:
+- 최근 일별 트렌드:
 {headlines}
 
 규칙:
 - 위 데이터에 근거해 한국어로 짧고 구체적으로 답하세요. 수치를 말할 때는 날짜를 함께 쓰세요.
-- 영어 헤드라인은 한국어로 풀어 설명하되 원문 제목도 괄호로 남기세요.
+- 도구로 받은 영어 원제(top)는 한국어로 풀어 설명하되 원문 제목도 괄호로 남기세요.
 - 요약에 없는 특정 날짜·기간의 값은 get_data_range로, 오늘의 카드뉴스·기술 블로그는 get_cards로 조회한 뒤 답하세요.
 - 도구로도 없는 사실(기사 본문 등)은 지어내지 말고 "데이터에 없다"고 말하세요.
 - "Show HN"(직접 만든 것 공개), "Ask HN"(질문 글)은 번역하지 마세요.

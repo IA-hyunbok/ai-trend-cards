@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>트렌드 캘린더</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <script>try { const t = localStorage.getItem("theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
+</head>
+<body class="cal-body">
+  <div id="wake" class="banner" hidden>무료 서버를 깨우는 중입니다. 첫 접속은 최대 1분 걸릴 수 있어요.</div>
+  <div id="toast" class="toast" role="alert" hidden></div>
+
+  <header class="top">
+    <a class="brand" href="index.html"><span class="logo">Y</span><span>IT 트렌드 카드</span></a>
+    <a class="btn" href="index.html">← AI 비서</a>
+    <button id="theme" class="icon-btn" type="button" aria-label="테마 전환">◐</button>
+  </header>
+
+  <main class="cal-page">
+    <section class="panel" aria-labelledby="h-cal">
+      <div class="panel-head">
+        <h2 id="h-cal">트렌드 캘린더</h2>
+        <span class="month-nav">
+          <button id="prev" class="icon-btn" type="button" aria-label="이전 달">‹</button>
+          <strong id="month" class="num"></strong>
+          <button id="next" class="icon-btn" type="button" aria-label="다음 달">›</button>
+        </span>
+        <span class="export">
+          <button id="export-csv" class="btn btn-ghost" type="button">CSV</button>
+          <button id="export-json" class="btn btn-ghost" type="button">JSON</button>
+          <button id="add" class="btn btn-primary" type="button">+ 기록 추가</button>
+        </span>
+      </div>
+      <p class="panel-desc meta">날짜마다 <b>그날 Hacker News에서 100점 넘게 추천받은 글 수</b>(색이 진할수록 많음)와 <b>AI가 정의한 그날의 트렌드 한 줄</b>이 적혀 있습니다. 매일 아침 자동으로 추가되고, 날짜를 누르면 아래에 그날 인기 글 카드가 나오고, 한 줄을 고치거나 지울 수 있습니다. AI 비서는 이 기록을 보고 답합니다.</p>
+      <figure class="chart">
+        <svg id="chart" viewBox="0 0 320 100" preserveAspectRatio="none" role="img" aria-label="하루 인기 글 수 추이 그래프"></svg>
+        <figcaption id="chart-cap" class="meta">전체 기간 하루 인기 글 수 · <span class="legend-avg">7일 평균</span></figcaption>
+      </figure>
+      <div class="cal-week meta" aria-hidden="true"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+      <ol id="cal" class="cal-grid"></ol>
+    </section>
+
+    <!-- 날짜를 누르면 그날 트렌드와 인기 글 카드 -->
+    <section id="day-panel" class="panel day-panel" aria-labelledby="day-h" hidden>
+      <div class="panel-head">
+        <h2 id="day-h"></h2>
+        <span id="day-value" class="meta num"></span>
+        <span class="export">
+          <button id="day-edit" class="btn" type="button">수정</button>
+          <button id="day-remove" class="btn btn-ghost btn-danger" type="button">삭제</button>
+        </span>
+      </div>
+      <p id="day-memo" class="day-memo"></p>
+      <ol id="day-cards" class="day-cards"></ol>
+    </section>
+  </main>
+
+  <dialog id="day">
+    <form id="day-form" class="day-form">
+      <h3 id="day-title"></h3>
+      <div class="field" id="day-date-field">
+        <label for="f-date">날짜</label>
+        <input id="f-date" type="date" required>
+      </div>
+      <div class="field">
+        <label for="f-memo">그날의 트렌드 한 줄</label>
+        <textarea id="f-memo" rows="2" maxlength="300" placeholder="예: Gemini 4 공개, AI 코딩 도구 경쟁 가열"></textarea>
+      </div>
+      <div class="field">
+        <label for="f-value">인기 글 수 (100점↑)</label>
+        <input id="f-value" type="number" min="0" max="1000" required>
+      </div>
+      <p id="day-top" class="meta"></p>
+      <div class="form-actions">
+        <button id="day-del" class="btn btn-ghost btn-danger" type="button">삭제</button>
+        <span class="spacer"></span>
+        <button id="day-cancel" class="btn" type="button">취소</button>
+        <button id="day-save" class="btn btn-primary" type="submit">저장</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="config.js" onerror="void 0"></script>
+  <script src="common.js"></script>
+  <script src="calendar.js"></script>
+</body>
+</html>

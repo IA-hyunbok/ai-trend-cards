@@ -1,20 +1,22 @@
-"""최근 N일 HN 화제도를 data 컬렉션에 적재한다. 점수가 굳은 이틀 전까지만.
+"""최근 N일 HN 화제도 + 그날 트렌드 한 줄(GPT)을 data 컬렉션에 적재한다. 점수가 굳은 이틀 전까지만.
 
 사용: cd backend && ../.venv/bin/python -m scripts.seed [일수=130]
 """
 import datetime as dt
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
-from services import data_service, hn_service
+from services import data_service
+from services.card_service import daily_row
 
 days = int(sys.argv[1]) if len(sys.argv) > 1 else 130
 last = dt.datetime.now(dt.timezone.utc).date() - dt.timedelta(days=2)
 
 rows = []
-for i in range(days):
-    day = last - dt.timedelta(days=i)
-    rows.append(hn_service.daily_stat(day))
-    print(f"\r{i + 1}/{days} {day}", end="", flush=True)
+with ThreadPoolExecutor(8) as ex:  # HN 수집 + GPT 한 줄을 동시에
+    for i, row in enumerate(ex.map(daily_row, (last - dt.timedelta(days=i) for i in range(days)))):
+        rows.append(row)
+        print(f"\r{i + 1}/{days} {row['date']} {row['memo'][:30]}", end="", flush=True)
 print()
 
 data_service.upsert_many(rows)

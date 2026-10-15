@@ -74,7 +74,7 @@ button, input, textarea { font: inherit; color: inherit; }
 /* 레이아웃 */
 .layout {
   flex: 1; min-height: 0;
-  display: grid; grid-template-columns: 260px minmax(0, 1fr) 340px; gap: var(--s4);
+  display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: var(--s4);
   padding: var(--s4) var(--s5);
 }
 .center { display: flex; flex-direction: column; gap: var(--s4); min-height: 0; }
@@ -146,27 +146,13 @@ button, input, textarea { font: inherit; color: inherit; }
   padding: var(--s2) var(--s3); background: var(--bg);
 }
 
-/* 데이터 */
-.data-form { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); padding: var(--s4); border-bottom: 1px solid var(--line); }
+/* 폼 */
 .field { display: flex; flex-direction: column; gap: var(--s1); }
 .field label { font-size: var(--f-xs); color: var(--muted); }
-.field input { border: 1px solid var(--line); border-radius: var(--r1); padding: var(--s2); background: var(--bg); }
-.field input:disabled { opacity: .6; }
-.wide { grid-column: 1 / -1; }
+.field input, .field textarea { border: 1px solid var(--line); border-radius: var(--r1); padding: var(--s2); background: var(--bg); resize: vertical; }
 .form-actions { display: flex; justify-content: flex-end; gap: var(--s2); }
 .panel-desc { margin: 0; padding: var(--s3) var(--s4) 0; line-height: 1.5; }
 .panel-desc b { color: var(--text); font-weight: 600; }
-.data-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; }
-.data-head, .data-list li {
-  display: grid; grid-template-columns: 88px 40px minmax(0, 1fr) auto; align-items: center; gap: var(--s2);
-  padding: var(--s2) var(--s4); border-bottom: 1px solid var(--line); font-size: var(--f-xs);
-}
-.data-list .memo { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.data-list .row-actions { display: flex; }
-.data-list .row-actions button { border: 0; background: none; cursor: pointer; color: var(--muted); padding: var(--s1); font-size: var(--f-xs); }
-.data-list .row-actions button:hover { color: var(--accent); }
-.data-list .row-actions .del:hover { color: var(--danger); }
-.data-list li.flash { background: var(--bg); }
 
 /* 그래프 · 내보내기 */
 .export { display: flex; margin-left: auto; }
@@ -179,6 +165,50 @@ button, input, textarea { font: inherit; color: inherit; }
 .chart figcaption { margin-top: var(--s1); min-height: 1.6em; }
 .legend-avg { color: var(--accent); font-weight: 600; }
 .msg .tools { display: block; margin-top: var(--s1); font-size: var(--f-xs); color: var(--muted); }
+
+/* 트렌드 캘린더 */
+a.btn { text-decoration: none; color: inherit; }
+a.brand { color: inherit; text-decoration: none; }
+.top .brand { margin-right: auto; }
+.cal-page { flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: var(--s4) var(--s5); }
+.month-nav { display: flex; align-items: center; gap: var(--s2); }
+.month-nav strong { min-width: 96px; text-align: center; font-size: var(--f-md); }
+.icon-btn:disabled { opacity: .35; cursor: default; }
+.cal-week, .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--s1); padding: 0 var(--s4); }
+.cal-week { padding-top: var(--s3); padding-bottom: var(--s1); text-align: center; }
+.cal-grid { list-style: none; margin: 0; padding-bottom: var(--s4); }
+.cal-cell {
+  --heat: 0;
+  width: 100%; height: 100%; min-height: 104px; text-align: left; cursor: pointer;
+  display: flex; flex-direction: column; gap: var(--s1); padding: var(--s2);
+  border: 1px solid var(--line); border-radius: var(--r1);
+  background: color-mix(in srgb, var(--accent-fill) calc(8% + var(--heat) * 47%), var(--surface));
+  transition: border-color .15s ease-out;
+}
+.cal-cell:hover:not(:disabled) { border-color: var(--accent-fill); }
+.cal-cell:disabled { cursor: default; opacity: .4; }
+.cal-day { font-size: var(--f-xs); color: var(--muted); }
+.cal-value { font-size: var(--f-xs); color: var(--accent); margin-top: calc(-1 * var(--s1)); }
+.cal-memo { font-size: var(--f-xs); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.none .cal-memo { color: var(--muted); }
+.none .cal-cell { border-style: dashed; }
+dialog {
+  width: min(440px, calc(100vw - 32px)); border: 1px solid var(--line); border-radius: var(--r2);
+  background: var(--surface); color: var(--text); padding: var(--s5);
+}
+dialog::backdrop { background: rgba(10, 9, 8, .5); }
+.day-form { display: grid; gap: var(--s3); }
+.day-form h3 { margin: 0; font-size: var(--f-md); }
+.day-form p { margin: 0; }
+.day-form .spacer { flex: 1; }
+.field[hidden], .btn[hidden] { display: none; }
+.cal-cell[aria-pressed="true"] { border-color: var(--accent-fill); box-shadow: inset 0 0 0 1px var(--accent-fill); }
+.day-panel { margin-top: var(--s4); }
+.day-panel[hidden] { display: none; }
+.day-memo { margin: 0; padding: var(--s4) var(--s4) 0; font-size: var(--f-lg); font-weight: 700; line-height: 1.4; }
+.day-cards { list-style: none; margin: 0; padding: var(--s4); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3); }
+.day-cards .empty { grid-column: 1 / -1; }
+.skeleton-card { min-height: 140px; border-left-color: var(--line); animation: pulse 1.2s ease-out infinite; }
 
 /* 화면 가이드(투어) */
 .tour { position: fixed; inset: 0; z-index: 20; }
@@ -223,9 +253,19 @@ button, input, textarea { font: inherit; color: inherit; }
   .card-strip { grid-auto-flow: row; grid-template-columns: minmax(0, 1fr); overflow-y: auto; }
   .msg { max-width: 90%; }
   .tabs {
-    display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--line); background: var(--surface);
+    display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); background: var(--surface);
     padding-bottom: env(safe-area-inset-bottom);
   }
   .tabs button { border: 0; background: none; padding: var(--s3) 0; color: var(--muted); font-weight: 600; cursor: pointer; }
   .tabs button[aria-current="page"] { color: var(--accent); box-shadow: inset 0 2px 0 var(--accent-fill); }
+  /* 캘린더: 칸이 좁아 한 줄이 안 읽히므로 날짜별 목록으로 바꾼다 */
+  .cal-page { padding: var(--s3) var(--s4); }
+  .cal-page .panel:not([hidden]) { display: flex; }
+  .cal-page .panel-head { flex-wrap: wrap; }
+  .cal-page .export { margin-left: 0; width: 100%; justify-content: flex-end; }
+  .cal-week, .cal-grid .blank, .cal-grid .none { display: none; }
+  .cal-grid { grid-template-columns: minmax(0, 1fr); gap: var(--s2); padding-top: var(--s3); }
+  .cal-cell { min-height: 0; display: grid; grid-template-columns: 28px 44px minmax(0, 1fr); align-items: baseline; gap: var(--s2); }
+  .cal-value { margin-top: 0; }
+  .day-cards { grid-template-columns: minmax(0, 1fr); }
 }

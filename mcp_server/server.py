@@ -25,13 +25,13 @@ def _get(path: str, **params) -> dict | list:
 
 @mcp.tool()
 def get_summary() -> dict:
-    """HN 화제도 데이터 전체 요약: 기간, 평균, 최고/최저, 최근 추세, 월별 평균, 최근 헤드라인."""
+    """HN 화제도 데이터 전체 요약: 기간, 평균, 최고/최저, 최근 추세, 월별 평균, 최근 일별 트렌드."""
     return _get("/api/data/summary")
 
 
 @mcp.tool()
 def get_data_range(start: str, end: str) -> list:
-    """기간(YYYY-MM-DD ~ YYYY-MM-DD)의 일별 화제도(value=100점 넘은 인기 글 수)와 1위 헤드라인(memo). 날짜 오름차순."""
+    """기간(YYYY-MM-DD ~ YYYY-MM-DD)의 일별 화제도(value=100점 넘은 인기 글 수), 그날 트렌드 한 줄(memo), 1위 글 원제(top). 날짜 오름차순."""
     return _get("/api/data", start=start, end=end, limit=100)[::-1]
 
 

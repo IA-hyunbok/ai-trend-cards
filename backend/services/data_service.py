@@ -20,7 +20,7 @@ class Missing(Exception):
 
 def _row(doc) -> dict:
     d = doc.to_dict()
-    return {"date": d["date"], "value": d["value"], "memo": d.get("memo", "")}
+    return {"date": d["date"], "value": d["value"], "memo": d.get("memo", ""), "top": d.get("top", "")}
 
 
 def list_data(start: dt.date | None = None, end: dt.date | None = None, limit: int = 200) -> list[dict]:
@@ -44,7 +44,7 @@ def create(date: dt.date, value: int, memo: str) -> dict:
         COL.document(row["date"]).create({**row, "updated_at": firestore.SERVER_TIMESTAMP})
     except AlreadyExists:
         raise Duplicate(row["date"])
-    return row
+    return {**row, "top": ""}
 
 
 def update(date: dt.date, fields: dict) -> dict:

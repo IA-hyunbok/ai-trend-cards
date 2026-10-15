@@ -9,7 +9,7 @@ class DataCreate(BaseModel):
 
     date: dt.date = Field(examples=["2026-10-01"])
     value: int = Field(ge=0, le=1000, description="그날 100점 이상 HN 인기 글 수(IT 화제도)", examples=[52])
-    memo: str = Field("", max_length=300, description="그날 1위 헤드라인")
+    memo: str = Field("", max_length=300, description="그날 트렌드 한 줄", examples=["Gemini 4 공개로 AI 모델 경쟁 재점화"])
 
     @field_validator("date")
     @classmethod
@@ -36,6 +36,7 @@ class DataItem(BaseModel):
     date: dt.date
     value: int
     memo: str
+    top: str = Field("", description="그날 1위 글 제목(자동 수집만)")
 
 
 class Point(BaseModel):

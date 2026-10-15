@@ -19,7 +19,7 @@ TOP_N = 5
 KST = dt.timezone(dt.timedelta(hours=9))
 log = logging.getLogger("uvicorn.error")
 
-CARD_PROMPT = """아래는 어제 Hacker News 인기 글 {n}개입니다. 각 글에 제목, 원문 사이트, 원문 소개문(있으면)이 있습니다. 각 글을 한국어 카드뉴스 한 장으로 만드세요.
+CARD_PROMPT = """아래는 Hacker News 인기 글 {n}개입니다. 각 글에 제목, 원문 사이트, 원문 소개문(있으면)이 있습니다. 각 글을 한국어 카드뉴스 한 장으로 만드세요.
 
 규칙:
 - title_ko: 무슨 소식인지 바로 알 수 있는 한국어 제목(40자 이내). 제품·회사·기술 이름은 원어 유지. "Show HN"(직접 만든 것 공개), "Ask HN"(질문 글)은 번역하지 말고 그대로 앞에 둔다
@@ -44,6 +44,56 @@ BLOG_PROMPT = """아래는 국내 기업 기술 블로그 새 글 {n}개의 제�
 {items}"""
 
 
+TREND_N = 10
+TREND_PROMPT = """아래는 {day} 하루 Hacker News 인기 글 제목입니다(추천 많은 순). 이날의 IT 트렌드를 한국어 한 문장(40자 이내)으로 정의하세요.
+
+규칙:
+- 형식: "<가장 큰 소식>, <여러 글에 공통된 흐름>" (공통 흐름이 없으면 앞부분만)
+- 구체적인 제품·회사·기술 이름을 1개 이상 넣는다. 이름은 원어 유지
+- "혁신적 변화", "우려 대두", "주목" 같은 내용 없는 말은 쓰지 않는다
+- 제목에 없는 사실을 지어내지 않는다
+- 따옴표·마침표·다른 말 없이 문장만 출력
+예: Gemini 4 공개, AI 코딩 도구 경쟁 가열
+
+{titles}"""
+
+
+def daily_row(day: dt.date) -> dict:
+    """시계열 1행: value = 인기 글 수, memo = 그날 트렌드 한 줄(GPT), top = 1위 글 제목."""
+    s = hn_service.stories(day)
+    top = s[0]["title"][:300] if s else ""
+    memo = ""
+    if s:
+        titles = "\n".join(f"{i + 1}. {x['title']}" for i, x in enumerate(s[:TREND_N]))
+        try:
+            res = client.chat.completions.create(model=MODEL, max_completion_tokens=100, messages=[
+                {"role": "user", "content": TREND_PROMPT.format(day=day.isoformat(), titles=titles)}])
+            memo = (res.choices[0].message.content or "").strip().strip("\"'").rstrip(".")[:300]
+        except Exception:
+            log.exception("trend line failed %s", day)
+        memo = memo or top  # GPT 실패 시 1위 제목으로라도 채운다
+    return {"date": day.isoformat(), "value": len(s), "memo": memo, "top": top}
+
+
+DAY_COL = db.collection("day_cards")
+DAY_N = 6
+
+
+def day_cards(day: dt.date) -> list[dict]:
+    """캘린더용: 그날 인기 글 상위 DAY_N개 카드. 한 번 만들면 저장해 두고 다시 쓴다."""
+    ref = DAY_COL.document(day.isoformat())
+    snap = ref.get()
+    if snap.exists:
+        return snap.to_dict()["items"]
+    top = hn_service.stories(day)[:DAY_N]
+    items = [{"title": s["title"], "url": s["url"], "points": s["points"], "comments": s["comments"], **ko}
+             for s, ko in zip(top, _translate(top))]
+    # 점수가 굳은 날(이틀 전 이전)이고 번역이 성공했을 때만 저장한다. 아니면 다음 조회 때 다시 만든다
+    if items and any(i["summary_ko"] for i in items) and day <= dt.datetime.now(dt.timezone.utc).date() - dt.timedelta(days=2):
+        ref.set({"date": day.isoformat(), "items": items})
+    return items
+
+
 def latest() -> dict | None:
     docs = list(COL.order_by("date", direction=firestore.Query.DESCENDING).limit(1).stream())
     return docs[0].to_dict() if docs else None
@@ -55,7 +105,7 @@ def publish() -> dict:
     card_date = dt.datetime.now(KST).date().isoformat()
 
     # 1. 시계열을 하루 늘린다 (점수가 굳은 이틀 전)
-    data_service.upsert_many([hn_service.daily_stat(utc_today - dt.timedelta(days=2))])
+    data_service.upsert_many([daily_row(utc_today - dt.timedelta(days=2))])
 
     ref = COL.document(card_date)
     existing = ref.get()
@@ -93,11 +143,17 @@ def _translate(stories: list[dict]) -> list[dict]:
     try:
         parsed = _ask_json(CARD_PROMPT.format(n=len(stories), items=block), len(stories))
         return [{"title_ko": str(p.get("title_ko") or s["title"])[:100],
-                 "summary_ko": str(p.get("summary_ko") or "")[:500]} for p, s in zip(parsed, stories)]
+                 "summary_ko": _clean(p.get("summary_ko"))} for p, s in zip(parsed, stories)]
     except Exception:
         # COPA는 JSON 모드 미지원 → 파싱 실패 시 원문 제목으로라도 발행
         log.exception("card translate failed, using original titles")
         return fallback
+
+
+def _clean(summary) -> str:
+    """소개문이 없을 때 GPT가 입력 표시 "(없음)"을 그대로 따라 쓰는 경우를 빈 요약으로 돌린다."""
+    s = str(summary or "").strip()
+    return "" if s.strip("()· ") in ("", "없음") else s[:500]
 
 
 def _ask_json(prompt: str, n: int) -> list[dict]:

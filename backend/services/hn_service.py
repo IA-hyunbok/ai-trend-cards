@@ -54,8 +54,3 @@ def describe(url: str) -> str:
     body = " ".join(p for p in paras if len(p) > 40)[:800]
     return " / ".join(x for x in (meta, body) if x)
 
-
-def daily_stat(day: dt.date) -> dict:
-    """시계열 1행: value = 인기 글 수, memo = 1위 헤드라인."""
-    s = stories(day)
-    return {"date": day.isoformat(), "value": len(s), "memo": s[0]["title"][:300] if s else ""}

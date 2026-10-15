@@ -1,34 +1,5 @@
 // 화면 상태는 이 객체 하나. 렌더 함수는 state만 보고 그린다.
-const API = (window.API_BASE_URL || "http://localhost:8000").replace(/\/$/, "");
-const state = { conversationId: null, messages: [], conversations: [], data: [], summary: null, editing: null, sending: false };
-const $ = (id) => document.getElementById(id);
-
-function el(tag, props = {}, ...children) {
-  const n = Object.assign(document.createElement(tag), props); // textContent만 사용 → XSS 방지
-  n.append(...children.filter((c) => c != null));
-  return n;
-}
-
-async function api(path, opts = {}) {
-  const res = await fetch(API + path, { headers: { "Content-Type": "application/json" }, ...opts });
-  if (res.status === 204) return null;
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const d = body.detail;
-    throw new Error(Array.isArray(d) ? d.map((x) => x.msg.replace(/^Value error, /, "")).join(", ") : d || `요청 실패 (${res.status})`);
-  }
-  return body;
-}
-
-let toastTimer;
-function toast(msg, ok = false) {
-  const t = $("toast");
-  t.textContent = msg;
-  t.className = ok ? "toast ok" : "toast";
-  t.hidden = false;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (t.hidden = true), 3500);
-}
+const state = { conversationId: null, messages: [], conversations: [], summary: null, sending: false };
 
 /* ---------- 요약 ---------- */
 async function loadSummary() {
@@ -39,7 +10,7 @@ function renderSummary() {
   const s = state.summary, box = $("summary");
   box.replaceChildren();
   const item = (label, value, cls) => box.append(el("div", {}, el("dt", { textContent: label }), el("dd", { textContent: value, className: cls || "" })));
-  if (!s.metrics) return item("데이터", "없음 — 오른쪽에서 추가하세요");
+  if (!s.metrics) return item("데이터", "없음 — 캘린더에서 추가하세요");
   const m = s.metrics;
   const trendCls = s.trend.startsWith("상승") ? "trend-up" : s.trend.startsWith("하락") ? "trend-down" : "trend-flat";
   item("기간", s.period);
@@ -78,7 +49,7 @@ function renderMessages() {
   const box = $("messages");
   if (!state.messages.length) {
     box.replaceChildren(el("div", { className: "empty" },
-      el("p", { textContent: "'일별 화제도 기록'(HN 인기 글 수)을 바탕으로 답해요." }),
+      el("p", { textContent: "트렌드 캘린더(날짜별 HN 인기 글 수와 그날의 트렌드)를 바탕으로 답해요." }),
       el("div", { className: "suggest" }, ...SUGGESTIONS.map((q) => el("button", { className: "btn", type: "button", textContent: q, onclick: () => send(q) }))),
     ));
     return;
@@ -164,131 +135,12 @@ function newChat() {
   showTab("panel-chat");
 }
 
-/* ---------- 데이터 관리 ---------- */
-async function loadData() {
-  state.data = await api("/api/data?limit=200");
-  renderData();
-}
-function renderData(flashDate) {
-  $("data-count").textContent = `${state.data.length}일치`;
-  renderChart();
-  const ul = $("data-list");
-  if (!state.data.length) {
-    ul.replaceChildren(el("li", { className: "empty", textContent: "데이터가 없어요. 위에서 추가하세요." }));
-    return;
-  }
-  ul.replaceChildren(...state.data.map((d) => el("li", { className: d.date === flashDate ? "flash" : "" },
-    el("span", { className: "num", textContent: d.date }),
-    el("span", { className: "num", textContent: d.value }),
-    el("span", { className: "memo", textContent: d.memo || "—", title: d.memo }),
-    el("span", { className: "row-actions" },
-      el("button", { type: "button", textContent: "수정", onclick: () => startEdit(d) }),
-      el("button", { type: "button", className: "del", textContent: "삭제", onclick: () => deleteData(d) })),
-  )));
-}
-/* ---------- 그래프(SVG) · 내보내기 ---------- */
-const SVG_NS = "http://www.w3.org/2000/svg";
-function renderChart() {
-  const svg = $("chart"), cap = $("chart-cap");
-  const rows = [...state.data].reverse(); // 날짜 오름차순
-  svg.replaceChildren();
-  if (rows.length < 2) return;
-  const W = 320, H = 100, vals = rows.map((r) => r.value);
-  const max = Math.max(...vals), min = Math.min(...vals);
-  const x = (i) => (i / (rows.length - 1)) * W;
-  const y = (v) => H - ((v - min) / (max - min || 1)) * H;
-  const avg = vals.map((_, i) => { const w = vals.slice(Math.max(0, i - 6), i + 1); return w.reduce((a, b) => a + b, 0) / w.length; });
-  const line = (arr, cls) => {
-    const p = document.createElementNS(SVG_NS, "polyline");
-    p.setAttribute("points", arr.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" "));
-    p.setAttribute("class", cls);
-    return p;
-  };
-  const cursor = document.createElementNS(SVG_NS, "line");
-  cursor.setAttribute("class", "cursor");
-  cursor.setAttribute("y1", 0); cursor.setAttribute("y2", H);
-  cursor.style.display = "none";
-  svg.append(line(vals, "daily"), line(avg, "avg"), cursor);
-  const defaultCap = '하루 인기 글 수 · <span class="legend-avg">7일 평균</span>';
-  // 마우스·터치 위치에서 가장 가까운 날짜의 값을 캡션에 보여 준다
-  svg.onpointermove = (e) => {
-    const r = svg.getBoundingClientRect();
-    const i = Math.round(((e.clientX - r.left) / r.width) * (rows.length - 1));
-    const d = rows[Math.min(rows.length - 1, Math.max(0, i))];
-    cursor.setAttribute("x1", x(rows.indexOf(d))); cursor.setAttribute("x2", x(rows.indexOf(d)));
-    cursor.style.display = "";
-    cap.textContent = `${d.date} · 인기 글 ${d.value}개 · 7일 평균 ${avg[rows.indexOf(d)].toFixed(1)}개`;
-  };
-  svg.onpointerleave = () => { cursor.style.display = "none"; cap.innerHTML = defaultCap; };
-}
-
-function download(name, text, type) {
-  const a = el("a", { href: URL.createObjectURL(new Blob([text], { type })), download: name });
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-function exportCSV() {
-  const q = (s) => `"${String(s).replace(/"/g, '""')}"`; // 헤드라인의 쉼표·따옴표 대비
-  const rows = [...state.data].reverse().map((d) => [d.date, d.value, q(d.memo)].join(","));
-  download("hn-trend.csv", "﻿" + ["date,value,memo", ...rows].join("\n"), "text/csv;charset=utf-8"); // BOM: 엑셀 한글
-}
-function exportJSON() {
-  download("hn-trend.json", JSON.stringify([...state.data].reverse(), null, 2), "application/json");
-}
-
-function startEdit(d) {
-  state.editing = d.date;
-  $("f-date").value = d.date;
-  $("f-date").disabled = true; // 문서 ID가 날짜라 날짜는 바꿀 수 없다
-  $("f-value").value = d.value;
-  $("f-memo").value = d.memo;
-  $("data-submit").textContent = "수정 저장";
-  $("data-cancel").hidden = false;
-  $("f-value").focus();
-}
-function resetForm() {
-  state.editing = null;
-  $("data-form").reset();
-  $("f-date").disabled = false;
-  $("data-submit").textContent = "추가";
-  $("data-cancel").hidden = true;
-}
-async function submitData(e) {
-  e.preventDefault();
-  const btn = $("data-submit");
-  const body = { value: Number($("f-value").value), memo: $("f-memo").value };
-  const date = state.editing || $("f-date").value;
-  btn.disabled = true;
-  try {
-    if (state.editing) await api(`/api/data/${date}`, { method: "PUT", body: JSON.stringify(body) });
-    else await api("/api/data", { method: "POST", body: JSON.stringify({ date, ...body }) });
-    toast(state.editing ? `${date} 수정됨` : `${date} 추가됨`, true);
-    resetForm();
-    await Promise.all([loadData(), loadSummary()]);
-    renderData(date);
-  } catch (err) { toast(err.message); } finally { btn.disabled = false; }
-}
-async function deleteData(d) {
-  if (!confirm(`${d.date} 데이터를 삭제할까요?`)) return;
-  try {
-    await api(`/api/data/${d.date}`, { method: "DELETE" });
-    toast(`${d.date} 삭제됨`, true);
-    await Promise.all([loadData(), loadSummary()]);
-  } catch (e) { toast(e.message); }
-}
-
-/* ---------- 탭(모바일) · 테마 ---------- */
+/* ---------- 탭(모바일) ---------- */
 function showTab(id) {
   document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("active", p.id === id));
   document.querySelectorAll(".tabs button").forEach((b) =>
     b.dataset.tab === id ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
 }
-function toggleTheme() {
-  const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
-  document.documentElement.dataset.theme = next;
-  try { localStorage.setItem("theme", next); } catch (e) {}
-}
-
 /* ---------- 화면 가이드(투어) ---------- */
 // tab: 모바일(한 번에 한 패널)에서 먼저 열어야 하는 패널. mobile: 모바일에서만 보여 줄 단계
 const TOUR = [
@@ -296,11 +148,8 @@ const TOUR = [
   { sel: "#panel-cards", tab: "panel-cards", title: "오늘의 카드", body: "매일 오전 8시에 바뀌는 카드뉴스입니다. 주황 카드 5장은 어제 Hacker News 인기 글, 옆으로 넘기면 나오는 파랑 카드 3장은 국내 기술 블로그 새 글입니다. 제목을 누르면 원문이 열립니다. 디스코드에도 같은 내용이 올라갑니다." },
   { sel: "#panel-chat", tab: "panel-chat", title: "AI 비서", body: "저장된 데이터를 근거로 답하는 채팅입니다. \"8월 25일부터 27일까지 화제도\"처럼 요약에 없는 걸 물으면 AI가 데이터를 더 꺼내 보고, 답 아래에 🔧 표시가 붙습니다." },
   { sel: "#panel-history", tab: "panel-history", title: "대화 기록", body: "채팅은 답을 받는 순간 자동 저장됩니다. 항목을 누르면 그 대화를 불러와 이어서 물어볼 수 있고, ✕로 지웁니다." },
-  { sel: "#data-list", tab: "panel-data", title: "일별 화제도 기록", body: "하루 한 줄씩 쌓이는 기록입니다. 예를 들어 \"2026-10-13 · 38 · Gemini 4 Argon\"은 10월 13일에 HN에서 100점 넘게 추천받은 글이 38개였고, 그날 1위 글이 \"Gemini 4 Argon\"이었다는 뜻입니다. 매일 아침 자동으로 추가되고, AI 비서가 이 기록을 보고 답합니다." },
-  { sel: ".chart", tab: "panel-data", title: "기록 그래프", body: "위 기록의 숫자(하루 인기 글 수)를 선으로 그린 것입니다. 회색은 그날그날 값, 주황은 7일 평균입니다. 높을수록 그날 IT 업계가 시끌벅적했다는 뜻이고, 마우스를 올리면 날짜별 값이 나옵니다." },
-  { sel: "#data-form", tab: "panel-data", title: "기록 직접 고치기", body: "기록은 자동으로 쌓이지만 손으로 한 줄을 추가할 수도 있습니다. 목록의 수정·삭제와 함께 쓰며, 바꾸면 요약·그래프·AI 답변에 바로 반영됩니다." },
-  { sel: ".export", tab: "panel-data", title: "내보내기", body: "기록 전체를 CSV(엑셀용)나 JSON 파일로 내려받습니다." },
-  { sel: ".tabs", mobile: true, title: "화면 전환 탭", body: "휴대폰에서는 한 번에 한 화면만 보입니다. 아래 탭으로 카드·채팅·데이터·기록을 오갑니다." },
+  { sel: "#cal-link", title: "트렌드 캘린더", body: "날짜별로 그날 HN 인기 글이 몇 개였는지(색이 진할수록 많음)와 AI가 정의한 그날의 트렌드 한 줄을 달력으로 봅니다. 날짜를 눌러 한 줄을 고치거나 지울 수 있고, AI 비서가 이 기록을 보고 답합니다." },
+  { sel: ".tabs", mobile: true, title: "화면 전환 탭", body: "휴대폰에서는 한 번에 한 화면만 보입니다. 아래 탭으로 카드·채팅·기록을 오가고, 캘린더는 위의 캘린더 버튼으로 엽니다." },
   { sel: "#tour-btn", title: "가이드 다시 보기", body: "이 ? 버튼을 누르면 언제든 가이드를 다시 볼 수 있습니다. 옆의 ◐ 버튼은 다크 모드입니다." },
 ];
 const isMobile = () => matchMedia("(max-width: 900px)").matches;
@@ -358,27 +207,9 @@ function moveTour(d) {
   showTourStep();
 }
 
-/* ---------- 시작: 콜드스타트 대응 ---------- */
-async function wake() {
-  const banner = setTimeout(() => ($("wake").hidden = false), 3000); // 3초 안에 응답 없으면 안내
-  for (let i = 0; i < 6; i++) {
-    try {
-      await api("/health");
-      clearTimeout(banner);
-      $("wake").hidden = true;
-      return true;
-    } catch (e) { await new Promise((r) => setTimeout(r, 5000)); }
-  }
-  clearTimeout(banner);
-  $("wake").textContent = "서버에 연결하지 못했어요. 잠시 후 새로고침해 주세요.";
-  return false;
-}
-
 async function init() {
   $("theme").onclick = toggleTheme;
   $("new-chat").onclick = newChat;
-  $("data-form").onsubmit = submitData;
-  $("data-cancel").onclick = resetForm;
   $("tour-btn").onclick = startTour;
   $("tour-next").onclick = () => moveTour(1);
   $("tour-prev").onclick = () => moveTour(-1);
@@ -390,9 +221,6 @@ async function init() {
     if (e.key === "ArrowLeft") moveTour(-1);
   });
   addEventListener("resize", placeTour);
-  $("export-csv").onclick = exportCSV;
-  $("export-json").onclick = exportJSON;
-  $("f-date").max = new Date().toISOString().slice(0, 10);
   $("chat-form").onsubmit = (e) => { e.preventDefault(); const v = $("chat-input").value; $("chat-input").value = ""; send(v); };
   $("chat-input").onkeydown = (e) => {
     if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("chat-form").requestSubmit(); }
@@ -402,7 +230,7 @@ async function init() {
   renderMessages();
 
   if (!(await wake())) return;
-  await Promise.allSettled([loadSummary(), loadCards(), loadConversations(), loadData()]).then((rs) => {
+  await Promise.allSettled([loadSummary(), loadCards(), loadConversations()]).then((rs) => {
     const failed = rs.find((r) => r.status === "rejected");
     if (failed) toast(failed.reason.message);
   });
