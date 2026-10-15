@@ -109,6 +109,10 @@ sequenceDiagram
 4. 호출한 도구 이름을 `tools_used`로 응답에 담아 화면에 표시합니다.
 5. MCP 서버(`mcp_server/server.py`)는 같은 이름·인자의 도구를 배포 API로 구현해, Claude 같은 외부 에이전트도 같은 근거로 데이터를 조회할 수 있습니다.
 
+## 아키텍처
+
+![아키텍처](docs/architecture.png)
+
 ## 기술 스택
 
 | 영역 | 사용 |
