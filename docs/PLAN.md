@@ -212,7 +212,7 @@ GitHub Actions (매일 KST 08:00 = UTC 23:00)
 | M3 cards + 디스코드 | ✅ 2026-10-14 — 원문 og:description 근거 요약, 디스코드 임베드 5장, 같은 날 재호출 시 중복 발송 없음. COPA는 JSON 모드 미지원 → 프롬프트 JSON + 실패 시 원문 제목 폴백 |
 | M4 프론트 | ✅ 2026-10-14 — 5개 영역 로컬 동작(CRUD·불러오기·채팅), 390px 모바일 탭, 다크 모드 |
 | M5 배포 | ✅ 2026-10-15 — Render(무료, 공개 저장소 URL 연결) https://ai-trend-cards.onrender.com · Vercel(CLI 배포) https://ai-trend-cards.vercel.app · Actions 수동 1회 성공. 둘 다 push 자동 배포 아님 → 수동 재배포. 카드 요약 2~3문장 + 국내 기술 블로그 3편 추가 |
-| M6 README·스크린샷 | 미션 항목 전부 |
+| M6 README·스크린샷 | ✅ 2026-10-15 — 소개·배포 URL·스택·API·로컬 실행·환경변수, 스크린샷 3장(메인·모바일 채팅·디스코드, 디스코드는 계정명 잘라냄) |
 | M7 보너스 | tools(`get_summary`, `get_data_range`, `get_cards`) + MCP 서버, 화제도 그래프(SVG), CSV 내보내기, 다크 모드 |
 
 ## 14. 준비물 (사용자)
