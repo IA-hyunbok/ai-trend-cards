@@ -12,6 +12,7 @@
   --danger: #b91c1c;
   --user-bubble: #2a2723;
   --user-text: #f7f6f3;
+  --blog: #1d4ed8;          /* 기술 블로그 카드 구분색 */
 
   --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px;
   --r1: 6px; --r2: 10px;
@@ -33,6 +34,7 @@
   --danger: #f87171;
   --user-bubble: #ece9e3;
   --user-text: #171614;
+  --blog: #60a5fa;
 }
 
 * { box-sizing: border-box; }
@@ -124,6 +126,8 @@ button, input, textarea { font: inherit; color: inherit; }
 .card p { margin: 0; color: var(--muted); font-size: var(--f-xs); }
 .card .orig { font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .card .stats { margin-top: auto; color: var(--accent); font: 600 var(--f-xs) var(--mono); }
+.card.blog { border-left-color: var(--blog); }
+.card.blog .stats { color: var(--blog); font-family: var(--font); }
 
 /* 채팅 */
 .chat { flex: 1; }

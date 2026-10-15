@@ -124,8 +124,17 @@ class CardItem(BaseModel):
     comments: int = 0
 
 
+class BlogItem(BaseModel):
+    blog: str
+    title: str
+    url: str
+    published: str
+    summary_ko: str
+
+
 class Card(BaseModel):
     date: dt.date = Field(description="발행일(KST)")
     source_day: dt.date = Field(description="글 작성일(UTC)")
     items: list[CardItem]
+    blogs: list[BlogItem] = Field(default=[], description="국내 기술 블로그 새 글")
     posted_to_discord: bool

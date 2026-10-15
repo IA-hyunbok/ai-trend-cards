@@ -32,7 +32,7 @@ def _strip(s: str) -> str:
 
 
 def describe(url: str) -> str:
-    """원문 페이지의 og:description/description. 실패하면 빈 문자열(카드 요약 근거용)."""
+    """원문 페이지의 소개문 + 본문 앞부분. 실패하면 빈 문자열(카드 요약 근거용)."""
     if "news.ycombinator.com" in url:
         return ""
     try:
@@ -41,13 +41,18 @@ def describe(url: str) -> str:
             page = res.read(300_000).decode(res.headers.get_content_charset() or "utf-8", "ignore")
     except Exception:
         return ""
+    meta = ""
     for pat in (r'<meta[^>]+property=["\']og:description["\'][^>]+content=["\']([^"\']+)',
                 r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:description',
                 r'<meta[^>]+name=["\']description["\'][^>]+content=["\']([^"\']+)'):
         m = re.search(pat, page, re.I)
         if m:
-            return _strip(m.group(1))[:400]
-    return ""
+            meta = _strip(m.group(1))[:400]
+            break
+    # 소개문만으로는 요약이 한 줄에 그친다 → 40자 넘는 본문 문단 앞부분을 더한다
+    paras = [" ".join(_strip(p).split()) for p in re.findall(r"<p[^>]*>(.*?)</p>", page, re.S | re.I)]
+    body = " ".join(p for p in paras if len(p) > 40)[:800]
+    return " / ".join(x for x in (meta, body) if x)
 
 
 def daily_stat(day: dt.date) -> dict:

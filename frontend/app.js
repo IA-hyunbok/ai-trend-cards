@@ -54,12 +54,17 @@ async function loadCards() {
   const list = $("cards");
   try {
     const c = await api("/api/cards/latest");
-    $("cards-date").textContent = `${c.date} 발행 · HN ${c.source_day} 인기 글`;
+    const blogs = c.blogs || [];
+    $("cards-date").textContent = `${c.date} 발행 · HN ${c.source_day} 인기 글${blogs.length ? ` + 기술 블로그 ${blogs.length}편` : ""}`;
     list.replaceChildren(...c.items.map((it, i) => el("li", { className: "card" },
       el("a", { href: it.url, target: "_blank", rel: "noopener noreferrer", textContent: `${i + 1}. ${it.title_ko}` }),
       it.summary_ko ? el("p", { textContent: it.summary_ko }) : null,
       el("p", { className: "orig", textContent: it.title, title: it.title }),
       el("span", { className: "stats", textContent: `▲ ${it.points} · 댓글 ${it.comments ?? 0}` }),
+    )), ...blogs.map((b) => el("li", { className: "card blog" },
+      el("a", { href: b.url, target: "_blank", rel: "noopener noreferrer", textContent: b.title }),
+      b.summary_ko ? el("p", { textContent: b.summary_ko }) : null,
+      el("span", { className: "stats", textContent: `${b.blog} 기술 블로그 · ${b.published.slice(0, 10)}` }),
     )));
   } catch (e) {
     list.replaceChildren(el("li", { className: "empty", textContent: "아직 발행된 카드가 없어요. 매일 오전 8시에 올라옵니다." }));
