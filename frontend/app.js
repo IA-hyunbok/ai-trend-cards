@@ -44,8 +44,8 @@ function renderSummary() {
   const trendCls = s.trend.startsWith("상승") ? "trend-up" : s.trend.startsWith("하락") ? "trend-down" : "trend-flat";
   item("기간", s.period);
   item("개수", `${s.count}일`, "num");
-  item("평균 화제도", `${m.average}건`, "num");
-  item("최신", `${m.latest.date} · ${m.latest.value}건`);
+  item("하루 평균 인기 글", `${m.average}개`, "num");
+  item("최신", `${m.latest.date} · ${m.latest.value}개`);
   item("최근 추세", s.trend, trendCls);
 }
 
@@ -78,7 +78,7 @@ function renderMessages() {
   const box = $("messages");
   if (!state.messages.length) {
     box.replaceChildren(el("div", { className: "empty" },
-      el("p", { textContent: "저장된 HN 화제도 데이터를 바탕으로 답해요." }),
+      el("p", { textContent: "'일별 화제도 기록'(HN 인기 글 수)을 바탕으로 답해요." }),
       el("div", { className: "suggest" }, ...SUGGESTIONS.map((q) => el("button", { className: "btn", type: "button", textContent: q, onclick: () => send(q) }))),
     ));
     return;
@@ -170,7 +170,7 @@ async function loadData() {
   renderData();
 }
 function renderData(flashDate) {
-  $("data-count").textContent = `최근 ${state.data.length}건`;
+  $("data-count").textContent = `${state.data.length}일치`;
   renderChart();
   const ul = $("data-list");
   if (!state.data.length) {
@@ -209,7 +209,7 @@ function renderChart() {
   cursor.setAttribute("y1", 0); cursor.setAttribute("y2", H);
   cursor.style.display = "none";
   svg.append(line(vals, "daily"), line(avg, "avg"), cursor);
-  const defaultCap = '일별 화제도 · <span class="legend-avg">7일 평균</span>';
+  const defaultCap = '하루 인기 글 수 · <span class="legend-avg">7일 평균</span>';
   // 마우스·터치 위치에서 가장 가까운 날짜의 값을 캡션에 보여 준다
   svg.onpointermove = (e) => {
     const r = svg.getBoundingClientRect();
@@ -217,7 +217,7 @@ function renderChart() {
     const d = rows[Math.min(rows.length - 1, Math.max(0, i))];
     cursor.setAttribute("x1", x(rows.indexOf(d))); cursor.setAttribute("x2", x(rows.indexOf(d)));
     cursor.style.display = "";
-    cap.textContent = `${d.date} · ${d.value}건 · 7일 평균 ${avg[rows.indexOf(d)].toFixed(1)}`;
+    cap.textContent = `${d.date} · 인기 글 ${d.value}개 · 7일 평균 ${avg[rows.indexOf(d)].toFixed(1)}개`;
   };
   svg.onpointerleave = () => { cursor.style.display = "none"; cap.innerHTML = defaultCap; };
 }
@@ -296,10 +296,10 @@ const TOUR = [
   { sel: "#panel-cards", tab: "panel-cards", title: "오늘의 카드", body: "매일 오전 8시에 바뀌는 카드뉴스입니다. 주황 카드 5장은 어제 Hacker News 인기 글, 옆으로 넘기면 나오는 파랑 카드 3장은 국내 기술 블로그 새 글입니다. 제목을 누르면 원문이 열립니다. 디스코드에도 같은 내용이 올라갑니다." },
   { sel: "#panel-chat", tab: "panel-chat", title: "AI 비서", body: "저장된 데이터를 근거로 답하는 채팅입니다. \"8월 25일부터 27일까지 화제도\"처럼 요약에 없는 걸 물으면 AI가 데이터를 더 꺼내 보고, 답 아래에 🔧 표시가 붙습니다." },
   { sel: "#panel-history", tab: "panel-history", title: "대화 기록", body: "채팅은 답을 받는 순간 자동 저장됩니다. 항목을 누르면 그 대화를 불러와 이어서 물어볼 수 있고, ✕로 지웁니다." },
-  { sel: ".chart", tab: "panel-data", title: "화제도 그래프", body: "회색 선은 그날그날 값, 주황 선은 7일 평균입니다. 마우스를 올리거나 손가락으로 대면 날짜별 값이 아래에 나옵니다." },
-  { sel: "#data-form", tab: "panel-data", title: "데이터 입력", body: "하루치 데이터를 직접 넣는 곳입니다. 평소에는 매일 아침 자동으로 한 줄씩 들어옵니다. 바꾸면 요약·그래프·AI 답변에 바로 반영됩니다." },
-  { sel: "#data-list", tab: "panel-data", title: "데이터 목록", body: "날짜 · 화제도 · 그날 1위 글 제목입니다. 수정을 누르면 위 입력칸에 값이 채워지고(날짜는 고정), 삭제는 확인 후 지웁니다." },
-  { sel: ".export", tab: "panel-data", title: "내보내기", body: "전체 데이터를 CSV(엑셀용)나 JSON 파일로 내려받습니다." },
+  { sel: "#data-list", tab: "panel-data", title: "일별 화제도 기록", body: "하루 한 줄씩 쌓이는 기록입니다. 예를 들어 \"2026-10-13 · 38 · Gemini 4 Argon\"은 10월 13일에 HN에서 100점 넘게 추천받은 글이 38개였고, 그날 1위 글이 \"Gemini 4 Argon\"이었다는 뜻입니다. 매일 아침 자동으로 추가되고, AI 비서가 이 기록을 보고 답합니다." },
+  { sel: ".chart", tab: "panel-data", title: "기록 그래프", body: "위 기록의 숫자(하루 인기 글 수)를 선으로 그린 것입니다. 회색은 그날그날 값, 주황은 7일 평균입니다. 높을수록 그날 IT 업계가 시끌벅적했다는 뜻이고, 마우스를 올리면 날짜별 값이 나옵니다." },
+  { sel: "#data-form", tab: "panel-data", title: "기록 직접 고치기", body: "기록은 자동으로 쌓이지만 손으로 한 줄을 추가할 수도 있습니다. 목록의 수정·삭제와 함께 쓰며, 바꾸면 요약·그래프·AI 답변에 바로 반영됩니다." },
+  { sel: ".export", tab: "panel-data", title: "내보내기", body: "기록 전체를 CSV(엑셀용)나 JSON 파일로 내려받습니다." },
   { sel: ".tabs", mobile: true, title: "화면 전환 탭", body: "휴대폰에서는 한 번에 한 화면만 보입니다. 아래 탭으로 카드·채팅·데이터·기록을 오갑니다." },
   { sel: "#tour-btn", title: "가이드 다시 보기", body: "이 ? 버튼을 누르면 언제든 가이드를 다시 볼 수 있습니다. 옆의 ◐ 버튼은 다크 모드입니다." },
 ];

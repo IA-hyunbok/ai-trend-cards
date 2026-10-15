@@ -74,19 +74,20 @@
       </section>
     </section>
 
-    <!-- 데이터 관리 -->
+    <!-- 일별 화제도 기록 (미션의 시계열 데이터) -->
     <section id="panel-data" class="panel data" aria-labelledby="h-data">
       <div class="panel-head">
-        <h2 id="h-data">데이터 관리</h2>
+        <h2 id="h-data">일별 화제도 기록</h2>
         <span id="data-count" class="meta"></span>
         <span class="export">
           <button id="export-csv" class="btn btn-ghost" type="button">CSV</button>
           <button id="export-json" class="btn btn-ghost" type="button">JSON</button>
         </span>
       </div>
+      <p class="panel-desc meta">하루에 Hacker News에서 <b>100점 넘게 추천받은 글이 몇 개</b>였는지와 <b>그날 1위 글</b>을 하루 한 줄씩 모은 기록입니다. 매일 아침 자동으로 추가되고, AI 비서가 이 기록을 보고 답합니다.</p>
       <figure class="chart">
-        <svg id="chart" viewBox="0 0 320 100" preserveAspectRatio="none" role="img" aria-label="일별 화제도 추이 그래프"></svg>
-        <figcaption id="chart-cap" class="meta">일별 화제도 · <span class="legend-avg">7일 평균</span></figcaption>
+        <svg id="chart" viewBox="0 0 320 100" preserveAspectRatio="none" role="img" aria-label="하루 인기 글 수 추이 그래프"></svg>
+        <figcaption id="chart-cap" class="meta">하루 인기 글 수 · <span class="legend-avg">7일 평균</span></figcaption>
       </figure>
       <form id="data-form" class="data-form">
         <div class="field">
@@ -94,11 +95,11 @@
           <input id="f-date" type="date" required>
         </div>
         <div class="field">
-          <label for="f-value">화제도</label>
+          <label for="f-value">인기 글 수 (100점↑)</label>
           <input id="f-value" type="number" min="0" max="1000" required>
         </div>
         <div class="field wide">
-          <label for="f-memo">메모 (1위 헤드라인)</label>
+          <label for="f-memo">그날 1위 글 제목</label>
           <input id="f-memo" type="text" maxlength="300">
         </div>
         <div class="form-actions wide">
@@ -106,6 +107,7 @@
           <button id="data-submit" class="btn btn-primary" type="submit">추가</button>
         </div>
       </form>
+      <div class="data-head meta" aria-hidden="true"><span>날짜</span><span>글 수</span><span>그날 1위 글</span><span></span></div>
       <ul id="data-list" class="data-list"></ul>
     </section>
   </main>

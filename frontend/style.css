@@ -154,8 +154,10 @@ button, input, textarea { font: inherit; color: inherit; }
 .field input:disabled { opacity: .6; }
 .wide { grid-column: 1 / -1; }
 .form-actions { display: flex; justify-content: flex-end; gap: var(--s2); }
+.panel-desc { margin: 0; padding: var(--s3) var(--s4) 0; line-height: 1.5; }
+.panel-desc b { color: var(--text); font-weight: 600; }
 .data-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; }
-.data-list li {
+.data-head, .data-list li {
   display: grid; grid-template-columns: 88px 40px minmax(0, 1fr) auto; align-items: center; gap: var(--s2);
   padding: var(--s2) var(--s4); border-bottom: 1px solid var(--line); font-size: var(--f-xs);
 }
