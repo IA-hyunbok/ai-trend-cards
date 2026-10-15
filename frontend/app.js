@@ -289,6 +289,75 @@ function toggleTheme() {
   try { localStorage.setItem("theme", next); } catch (e) {}
 }
 
+/* ---------- 화면 가이드(투어) ---------- */
+// tab: 모바일(한 번에 한 패널)에서 먼저 열어야 하는 패널. mobile: 모바일에서만 보여 줄 단계
+const TOUR = [
+  { sel: "#summary", title: "요약 줄", body: "저장된 데이터 전체 요약입니다. 평균 화제도는 하루에 100점 넘은 HN 인기 글 수의 평균이고, 최근 추세는 최근 7일 평균을 그 전 28일 평균과 비교한 값입니다. AI 비서도 이 숫자를 보고 답합니다." },
+  { sel: "#panel-cards", tab: "panel-cards", title: "오늘의 카드", body: "매일 오전 8시에 바뀌는 카드뉴스입니다. 주황 카드 5장은 어제 Hacker News 인기 글, 옆으로 넘기면 나오는 파랑 카드 3장은 국내 기술 블로그 새 글입니다. 제목을 누르면 원문이 열립니다. 디스코드에도 같은 내용이 올라갑니다." },
+  { sel: "#panel-chat", tab: "panel-chat", title: "AI 비서", body: "저장된 데이터를 근거로 답하는 채팅입니다. \"8월 25일부터 27일까지 화제도\"처럼 요약에 없는 걸 물으면 AI가 데이터를 더 꺼내 보고, 답 아래에 🔧 표시가 붙습니다." },
+  { sel: "#panel-history", tab: "panel-history", title: "대화 기록", body: "채팅은 답을 받는 순간 자동 저장됩니다. 항목을 누르면 그 대화를 불러와 이어서 물어볼 수 있고, ✕로 지웁니다." },
+  { sel: ".chart", tab: "panel-data", title: "화제도 그래프", body: "회색 선은 그날그날 값, 주황 선은 7일 평균입니다. 마우스를 올리거나 손가락으로 대면 날짜별 값이 아래에 나옵니다." },
+  { sel: "#data-form", tab: "panel-data", title: "데이터 입력", body: "하루치 데이터를 직접 넣는 곳입니다. 평소에는 매일 아침 자동으로 한 줄씩 들어옵니다. 바꾸면 요약·그래프·AI 답변에 바로 반영됩니다." },
+  { sel: "#data-list", tab: "panel-data", title: "데이터 목록", body: "날짜 · 화제도 · 그날 1위 글 제목입니다. 수정을 누르면 위 입력칸에 값이 채워지고(날짜는 고정), 삭제는 확인 후 지웁니다." },
+  { sel: ".export", tab: "panel-data", title: "내보내기", body: "전체 데이터를 CSV(엑셀용)나 JSON 파일로 내려받습니다." },
+  { sel: ".tabs", mobile: true, title: "화면 전환 탭", body: "휴대폰에서는 한 번에 한 화면만 보입니다. 아래 탭으로 카드·채팅·데이터·기록을 오갑니다." },
+  { sel: "#tour-btn", title: "가이드 다시 보기", body: "이 ? 버튼을 누르면 언제든 가이드를 다시 볼 수 있습니다. 옆의 ◐ 버튼은 다크 모드입니다." },
+];
+const isMobile = () => matchMedia("(max-width: 900px)").matches;
+let tourSteps = [], tourAt = 0, tourTab = null;
+
+function startTour() {
+  tourSteps = TOUR.filter((s) => !s.mobile || isMobile());
+  tourTab = document.querySelector(".tabs button[aria-current]")?.dataset.tab; // 끝나면 원래 탭으로
+  tourAt = 0;
+  $("tour").hidden = false;
+  showTourStep();
+  $("tour-next").focus();
+}
+function endTour() {
+  $("tour").hidden = true;
+  if (tourTab) showTab(tourTab);
+  try { localStorage.setItem("tour-done", "1"); } catch (e) {}
+}
+function showTourStep() {
+  const s = tourSteps[tourAt];
+  if (isMobile() && s.tab) showTab(s.tab);
+  const target = document.querySelector(s.sel);
+  target.scrollIntoView({ block: "nearest" });
+  $("tour-step").textContent = `${tourAt + 1} / ${tourSteps.length}`;
+  $("tour-title").textContent = s.title;
+  $("tour-body").textContent = s.body;
+  $("tour-prev").disabled = tourAt === 0;
+  $("tour-next").textContent = tourAt === tourSteps.length - 1 ? "완료" : "다음";
+  placeTour();
+}
+function placeTour() {
+  if ($("tour").hidden) return;
+  const r = document.querySelector(tourSteps[tourAt].sel).getBoundingClientRect();
+  const pad = 6, gap = 12, vw = innerWidth, vh = innerHeight;
+  Object.assign($("tour").querySelector(".tour-spot").style, {
+    left: `${r.left - pad}px`, top: `${r.top - pad}px`, width: `${r.width + pad * 2}px`, height: `${r.height + pad * 2}px`,
+  });
+  // 말풍선: 아래 → 위 → 오른쪽 → 왼쪽 순으로 들어갈 자리를 찾고, 없으면 화면 아래쪽에 띄운다
+  const tip = $("tour").querySelector(".tour-tip"), w = tip.offsetWidth, h = tip.offsetHeight;
+  const clampX = (x) => Math.min(Math.max(16, x), vw - w - 16);
+  const clampY = (y) => Math.min(Math.max(16, y), vh - h - 16);
+  let x, y;
+  if (r.bottom + pad + gap + h < vh) [x, y] = [clampX(r.left), r.bottom + pad + gap];
+  else if (r.top - pad - gap - h > 0) [x, y] = [clampX(r.left), r.top - pad - gap - h];
+  else if (r.right + pad + gap + w < vw) [x, y] = [r.right + pad + gap, clampY(r.top)];
+  else if (r.left - pad - gap - w > 0) [x, y] = [r.left - pad - gap - w, clampY(r.top)];
+  else [x, y] = [clampX((vw - w) / 2), vh - h - 16];
+  Object.assign(tip.style, { left: `${x}px`, top: `${y}px` });
+}
+function moveTour(d) {
+  const n = tourAt + d;
+  if (n < 0) return;
+  if (n >= tourSteps.length) return endTour();
+  tourAt = n;
+  showTourStep();
+}
+
 /* ---------- 시작: 콜드스타트 대응 ---------- */
 async function wake() {
   const banner = setTimeout(() => ($("wake").hidden = false), 3000); // 3초 안에 응답 없으면 안내
@@ -310,6 +379,17 @@ async function init() {
   $("new-chat").onclick = newChat;
   $("data-form").onsubmit = submitData;
   $("data-cancel").onclick = resetForm;
+  $("tour-btn").onclick = startTour;
+  $("tour-next").onclick = () => moveTour(1);
+  $("tour-prev").onclick = () => moveTour(-1);
+  $("tour-skip").onclick = endTour;
+  document.addEventListener("keydown", (e) => {
+    if ($("tour").hidden) return;
+    if (e.key === "Escape") endTour();
+    if (e.key === "ArrowRight") moveTour(1);
+    if (e.key === "ArrowLeft") moveTour(-1);
+  });
+  addEventListener("resize", placeTour);
   $("export-csv").onclick = exportCSV;
   $("export-json").onclick = exportJSON;
   $("f-date").max = new Date().toISOString().slice(0, 10);
@@ -326,6 +406,10 @@ async function init() {
     const failed = rs.find((r) => r.status === "rejected");
     if (failed) toast(failed.reason.message);
   });
+  // 첫 방문이면 데이터가 다 그려진 뒤 가이드를 띄운다
+  let seen = false;
+  try { seen = !!localStorage.getItem("tour-done"); } catch (e) {}
+  if (!seen) startTour();
 }
 
 init();

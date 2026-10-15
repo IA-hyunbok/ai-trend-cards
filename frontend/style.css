@@ -178,6 +178,25 @@ button, input, textarea { font: inherit; color: inherit; }
 .legend-avg { color: var(--accent); font-weight: 600; }
 .msg .tools { display: block; margin-top: var(--s1); font-size: var(--f-xs); color: var(--muted); }
 
+/* 화면 가이드(투어) */
+.tour { position: fixed; inset: 0; z-index: 20; }
+.tour-spot {
+  position: fixed; border-radius: var(--r2); pointer-events: none;
+  box-shadow: 0 0 0 3px var(--accent-fill), 0 0 0 9999px rgba(10, 9, 8, .62); /* 바깥을 어둡게 */
+  transition: top .2s ease-out, left .2s ease-out, width .2s ease-out, height .2s ease-out;
+}
+.tour-tip {
+  position: fixed; width: min(340px, calc(100vw - 32px)); background: var(--surface); color: var(--text);
+  border: 1px solid var(--line); border-radius: var(--r2); padding: var(--s4); display: grid; gap: var(--s2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
+}
+.tour-tip h3 { margin: 0; font-size: var(--f-md); }
+.tour-tip p { margin: 0; }
+.tour-step { color: var(--accent); font-weight: 600; }
+.tour-actions { display: flex; justify-content: space-between; align-items: center; margin-top: var(--s2); }
+.tour-nav { display: flex; gap: var(--s2); }
+@media (prefers-reduced-motion: reduce) { .tour-spot { transition: none; } }
+
 /* 상태 */
 .skeleton { background: var(--line); border-radius: var(--r1); min-width: 80px; animation: pulse 1.2s ease-out infinite; }
 @keyframes pulse { 50% { opacity: .4; } }

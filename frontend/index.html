@@ -19,8 +19,26 @@
     <dl id="summary" class="summary" aria-label="데이터 요약">
       <div><dt>기간</dt><dd class="skeleton">&nbsp;</dd></div>
     </dl>
+    <button id="tour-btn" class="icon-btn" type="button" aria-label="화면 가이드 보기" title="화면 가이드">?</button>
     <button id="theme" class="icon-btn" type="button" aria-label="테마 전환">◐</button>
   </header>
+
+  <!-- 화면 가이드(투어): 대상 영역만 밝게 비추고 말풍선으로 하나씩 설명 -->
+  <div id="tour" class="tour" hidden>
+    <div class="tour-spot"></div>
+    <div class="tour-tip" role="dialog" aria-modal="true" aria-labelledby="tour-title">
+      <p class="tour-step meta" id="tour-step"></p>
+      <h3 id="tour-title"></h3>
+      <p id="tour-body"></p>
+      <div class="tour-actions">
+        <button id="tour-skip" class="btn btn-ghost" type="button">건너뛰기</button>
+        <span class="tour-nav">
+          <button id="tour-prev" class="btn" type="button">이전</button>
+          <button id="tour-next" class="btn btn-primary" type="button">다음</button>
+        </span>
+      </div>
+    </div>
+  </div>
 
   <main class="layout">
     <!-- 대화 기록 -->
