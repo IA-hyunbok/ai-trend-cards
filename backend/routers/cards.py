@@ -18,6 +18,13 @@ def latest():
     return card
 
 
+@router.get("/days", response_model=dict[str, list[CardItem]], summary="기간 안의 저장된 날짜별 카드(최대 31일). 캘린더 한 달 미리 받기용")
+def days_cards(start: dt.date, end: dt.date):
+    if not 0 <= (end - start).days <= 31:
+        raise HTTPException(400, "기간은 31일 이내여야 합니다")
+    return card_service.day_cards_range(start, end)
+
+
 @router.get("/day/{day}", response_model=list[CardItem], summary="그날(UTC) HN 인기 글 카드 6장. 처음 조회 때 생성 후 저장")
 def day_cards(day: dt.date):
     if not dt.date.today() - dt.timedelta(days=365) <= day < dt.date.today():

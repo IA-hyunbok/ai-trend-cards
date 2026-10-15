@@ -9,6 +9,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
 from firebase_admin import firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
 
 from db import db
 from services import blog_service, data_service, hn_service
@@ -92,6 +93,13 @@ def day_cards(day: dt.date) -> list[dict]:
     if items and any(i["summary_ko"] for i in items) and day <= dt.datetime.now(dt.timezone.utc).date() - dt.timedelta(days=2):
         ref.set({"date": day.isoformat(), "items": items})
     return items
+
+
+def day_cards_range(start: dt.date, end: dt.date) -> dict[str, list[dict]]:
+    """캘린더가 한 달 치를 한 번에 받아 두는 용도. 저장된 날짜만 돌려준다(없는 날짜는 day_cards로 생성)."""
+    q = DAY_COL.where(filter=FieldFilter("date", ">=", start.isoformat())).where(
+        filter=FieldFilter("date", "<=", end.isoformat()))
+    return {d.id: d.to_dict()["items"] for d in q.stream()}
 
 
 def latest() -> dict | None:

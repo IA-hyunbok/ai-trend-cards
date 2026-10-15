@@ -1,5 +1,5 @@
 // 트렌드 캘린더: data 컬렉션(date, value, memo)을 달력으로 보여 주고, 날짜를 눌러 CRUD
-const state = { data: [], byDate: {}, month: null, editing: null, selected: null }; // month = "YYYY-MM"
+const state = { data: [], byDate: {}, month: null, editing: null, selected: null, cards: {} }; // cards: 날짜 → 카드(미리 받아 둔 것) // month = "YYYY-MM"
 const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const today = iso(new Date());
 
@@ -22,6 +22,13 @@ function moveMonth(d) {
   if (next < min || next > max) return;
   state.month = next;
   renderCal();
+  prefetchMonth();
+}
+// 달을 열면 그 달 카드를 한 번에 받아 둔다 → 날짜를 누를 때 서버를 기다리지 않는다
+async function prefetchMonth() {
+  const [y, m] = state.month.split("-").map(Number);
+  const end = `${state.month}-${String(new Date(y, m, 0).getDate()).padStart(2, "0")}`;
+  try { Object.assign(state.cards, await api(`/api/cards/days?start=${state.month}-01&end=${end}`)); } catch (e) {}
 }
 function renderCal() {
   const [y, m] = state.month.split("-").map(Number);
@@ -60,10 +67,10 @@ async function selectDay(date) {
   $("day-value").textContent = `인기 글 ${d.value}개`;
   $("day-memo").textContent = d.memo || "(한 줄 없음)";
   const list = $("day-cards");
-  list.replaceChildren(...Array.from({ length: 6 }, () => el("li", { className: "card skeleton-card" })));
   panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (!state.cards[date]) list.replaceChildren(...Array.from({ length: 6 }, () => el("li", { className: "card skeleton-card" })));
   try {
-    const items = await api(`/api/cards/day/${date}`);
+    const items = state.cards[date] || (state.cards[date] = await api(`/api/cards/day/${date}`));
     if (state.selected !== date) return; // 기다리는 사이 다른 날짜를 눌렀다
     list.replaceChildren(...(items.length ? items.map((it, i) => el("li", { className: "card" },
       el("a", { href: it.url, target: "_blank", rel: "noopener noreferrer", textContent: `${i + 1}. ${it.title_ko}` }),
@@ -153,7 +160,7 @@ function renderChart() {
   svg.onpointerleave = () => { cursor.style.display = "none"; cap.innerHTML = defaultCap; };
   svg.onclick = () => { // 그래프에서 고른 날짜의 달로 이동
     const d = cap.textContent.slice(0, 10);
-    if (state.byDate[d]) { state.month = d.slice(0, 7); selectDay(d); }
+    if (state.byDate[d]) { state.month = d.slice(0, 7); prefetchMonth(); selectDay(d); }
   };
 }
 
@@ -186,7 +193,7 @@ async function init() {
   $("f-date").max = today;
   state.month = today.slice(0, 7);
   if (!(await wake())) return;
-  try { await loadData(); } catch (e) { toast(e.message); }
+  try { await Promise.all([loadData(), prefetchMonth()]); } catch (e) { toast(e.message); }
 }
 
 init();

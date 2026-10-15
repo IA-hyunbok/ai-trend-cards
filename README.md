@@ -134,6 +134,7 @@ sequenceDiagram
 | DELETE | `/api/conversations/{id}` | 대화 삭제 |
 | POST | `/api/chat` | AI 채팅(요약 주입 + 자동 저장) |
 | GET | `/api/cards/latest` | 최신 카드뉴스 |
+| GET | `/api/cards/days?start&end` | 기간(31일 이내)의 저장된 날짜별 카드. 캘린더가 한 달 치를 미리 받음 |
 | GET | `/api/cards/day/{day}` | 그날 인기 글 카드 6장(처음 조회 때 생성 후 저장) |
 | POST | `/api/cards/publish` | 오늘 카드 발행(`X-Cron-Secret` 헤더 필요) |
 | GET | `/health` | 헬스 체크 |
