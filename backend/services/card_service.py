@@ -132,6 +132,11 @@ def _blogs(exclude: set[str]) -> list[dict]:
             for p, s in zip(picked, sums)]
 
 
+def _ko_date(iso: str) -> str:
+    d = dt.date.fromisoformat(iso)
+    return f"{d.month}월 {d.day}일 ({'월화수목금토일'[d.weekday()]})"
+
+
 def _post_discord(card: dict) -> bool:
     url = os.getenv("DISCORD_WEBHOOK_URL")
     if not url:
@@ -150,7 +155,9 @@ def _post_discord(card: dict) -> bool:
     } for b in card.get("blogs", [])]
     blog_n = len(card.get("blogs", []))
     body = {"username": "IT 트렌드 카드",
-            "content": f"📰 **{card['date']} IT 트렌드 카드** — Hacker News 어제의 인기 글 {len(card['items'])}선"
+            # "# "는 디스코드에서 H1 제목으로 렌더링된다
+            "content": f"# 📰 {_ko_date(card['date'])} IT 트렌드 카드\n"
+                       f"Hacker News 어제의 인기 글 {len(card['items'])}선"
                        + (f" + 국내 기술 블로그 새 글 {blog_n}편" if blog_n else ""),
             "embeds": embeds}
     req = urllib.request.Request(url, data=json.dumps(body).encode(), method="POST", headers={
