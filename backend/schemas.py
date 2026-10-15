@@ -134,6 +134,11 @@ class BlogItem(BaseModel):
     summary_ko: str
 
 
+class DayCards(BaseModel):
+    items: list[CardItem] = Field(description="요청한 페이지의 카드(추천 순 6개씩)")
+    total: int = Field(description="그날 100점 넘은 인기 글 전체 수")
+
+
 class Card(BaseModel):
     date: dt.date = Field(description="발행일(KST)")
     source_day: dt.date = Field(description="글 작성일(UTC)")

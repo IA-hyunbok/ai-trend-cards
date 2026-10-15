@@ -1,5 +1,5 @@
 // 트렌드 캘린더: data 컬렉션(date, value, memo)을 달력으로 보여 주고, 날짜를 눌러 CRUD
-const state = { data: [], byDate: {}, month: null, editing: null, selected: null, cards: {} }; // cards: 날짜 → 카드(미리 받아 둔 것) // month = "YYYY-MM"
+const state = { data: [], byDate: {}, month: null, editing: null, selected: null, cards: {} }; // cards: 날짜 → { items: 지금까지 받은 카드, total } // month = "YYYY-MM"
 const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const today = iso(new Date());
 
@@ -28,7 +28,10 @@ function moveMonth(d) {
 async function prefetchMonth() {
   const [y, m] = state.month.split("-").map(Number);
   const end = `${state.month}-${String(new Date(y, m, 0).getDate()).padStart(2, "0")}`;
-  try { Object.assign(state.cards, await api(`/api/cards/days?start=${state.month}-01&end=${end}`)); } catch (e) {}
+  try {
+    const got = await api(`/api/cards/days?start=${state.month}-01&end=${end}`);
+    for (const [date, c] of Object.entries(got)) state.cards[date] ??= c; // 더 보기로 늘린 날짜는 덮어쓰지 않는다
+  } catch (e) {}
 }
 function renderCal() {
   const [y, m] = state.month.split("-").map(Number);
@@ -55,7 +58,8 @@ function renderCal() {
   $("cal").replaceChildren(...cells);
 }
 
-/* ---------- 선택한 날짜: 트렌드 한 줄 + 그날 인기 글 카드(3열) ---------- */
+/* ---------- 선택한 날짜: 트렌드 한 줄 + 그날 인기 글 카드(3열, 6개씩 더 보기) ---------- */
+const PAGE = 6;
 async function selectDay(date) {
   const d = state.byDate[date];
   state.selected = d ? date : null;
@@ -65,23 +69,45 @@ async function selectDay(date) {
   if (!d) return;
   $("day-h").textContent = `${date} 트렌드`;
   $("day-value").textContent = `100점 넘은 인기 글 ${d.value}개`;
-  $("day-cap").textContent = `이 ${d.value}개 중 추천이 가장 많은 ${Math.min(d.value, 6)}개를 카드로 보여 줍니다.`;
   $("day-memo").textContent = d.memo || "(한 줄 없음)";
-  const list = $("day-cards");
   panel.scrollIntoView({ behavior: "smooth", block: "start" });
-  if (!state.cards[date]) list.replaceChildren(...Array.from({ length: 6 }, () => el("li", { className: "card skeleton-card" })));
-  try {
-    const items = state.cards[date] || (state.cards[date] = await api(`/api/cards/day/${date}`));
-    if (state.selected !== date) return; // 기다리는 사이 다른 날짜를 눌렀다
-    list.replaceChildren(...(items.length ? items.map((it, i) => el("li", { className: "card" },
-      el("a", { href: it.url, target: "_blank", rel: "noopener noreferrer", textContent: `${i + 1}. ${it.title_ko}` }),
-      it.summary_ko ? el("p", { textContent: it.summary_ko }) : null,
-      el("p", { className: "orig", textContent: it.title, title: it.title }),
-      el("span", { className: "stats", textContent: `▲ ${it.points} · 댓글 ${it.comments ?? 0}` }),
-    )) : [el("li", { className: "empty", textContent: "이 날짜에는 100점 넘은 글이 없어요." })]));
-  } catch (e) {
-    if (state.selected === date) list.replaceChildren(el("li", { className: "empty", textContent: e.message }));
+  if (!state.cards[date]) {
+    $("day-cap").textContent = "";
+    $("day-more").hidden = true;
+    $("day-cards").replaceChildren(...Array.from({ length: PAGE }, () => el("li", { className: "card skeleton-card" })));
   }
+  try {
+    state.cards[date] ??= await api(`/api/cards/day/${date}`);
+    if (state.selected === date) renderDayCards(date); // 기다리는 사이 다른 날짜를 눌렀으면 그리지 않는다
+  } catch (e) {
+    if (state.selected === date) $("day-cards").replaceChildren(el("li", { className: "empty", textContent: e.message }));
+  }
+}
+function renderDayCards(date) {
+  const { items, total } = state.cards[date];
+  $("day-cap").textContent = total ? `이 ${total}개를 추천이 많은 순서로 카드로 보여 줍니다.` : "";
+  $("day-cards").replaceChildren(...(items.length ? items.map((it, i) => el("li", { className: "card" },
+    el("a", { href: it.url, target: "_blank", rel: "noopener noreferrer", textContent: `${i + 1}. ${it.title_ko}` }),
+    it.summary_ko ? el("p", { textContent: it.summary_ko }) : null,
+    el("p", { className: "orig", textContent: it.title, title: it.title }),
+    el("span", { className: "stats", textContent: `▲ ${it.points} · 댓글 ${it.comments ?? 0}` }),
+  )) : [el("li", { className: "empty", textContent: "이 날짜에는 100점 넘은 글이 없어요." })]));
+  const more = $("day-more");
+  more.hidden = items.length >= total;
+  more.disabled = false;
+  more.textContent = `${Math.min(PAGE, total - items.length)}개 더 보기 (${items.length}/${total})`;
+}
+async function loadMore() {
+  const date = state.selected, c = state.cards[date], more = $("day-more");
+  more.disabled = true;
+  more.textContent = "카드 만드는 중… (처음 보는 카드는 10초쯤 걸려요)";
+  try {
+    const r = await api(`/api/cards/day/${date}?page=${Math.floor(c.items.length / PAGE)}`);
+    c.items = c.items.concat(r.items);
+    c.total = r.total;
+    if (!r.items.length) c.total = c.items.length; // 더 없음
+  } catch (e) { toast(e.message); }
+  if (state.selected === date) renderDayCards(date);
 }
 
 /* ---------- 날짜 상세(추가·수정·삭제) ---------- */
@@ -193,7 +219,7 @@ const TOUR = [
   { sel: ".cal-grid .has", title: "칸 읽는 법", body: "맨 위 숫자는 날짜, '인기 N'은 그날 Hacker News에서 100점 넘게 추천받은 글이 N개였다는 뜻입니다. 많을수록 칸 색이 진합니다. 아래 문장은 그날 인기 글 상위 10개 제목을 보고 AI가 정의한 '그날의 트렌드 한 줄'입니다. 점선 칸은 기록이 없는 날로, 누르면 직접 추가할 수 있습니다." },
   { sel: ".chart", title: "전체 기간 그래프", body: "모든 날의 인기 글 수를 선으로 그렸습니다. 회색은 그날그날 값, 주황은 7일 평균입니다. 마우스를 올리면 날짜별 값과 트렌드가 나오고, 누르면 그 날짜로 이동합니다." },
   { sel: "#day-memo", before: selectForTour, title: "날짜를 누르면", body: "그날의 트렌드 한 줄이 크게 나오고, 오른쪽 위에 그날 100점 넘은 인기 글 수가 표시됩니다." },
-  { sel: "#day-cards li", before: selectForTour, title: "그날의 인기 글 카드", body: "그날 인기 글 전체 중 추천을 가장 많이 받은 6개만 골라 한국어 제목과 2~3문장 요약으로 정리한 카드입니다. 그래서 '인기 54'인 날도 카드는 6장입니다. 제목을 누르면 원문이 열리고, ▲는 추천 수입니다." },
+  { sel: "#day-cards li", before: selectForTour, title: "그날의 인기 글 카드", body: "그날 인기 글을 추천이 많은 순서로 한국어 제목과 2~3문장 요약 카드로 보여 줍니다. 처음엔 6장이고, 아래 '6개 더 보기'를 누를 때마다 6장씩 늘어나 '인기 54'인 날은 54장까지 볼 수 있습니다. 제목을 누르면 원문이 열리고, ▲는 추천 수입니다." },
   { sel: ".day-panel .export", before: selectForTour, title: "고치기·지우기", body: "트렌드 한 줄이나 인기 글 수를 직접 고치거나 그날 기록을 지웁니다. 바꾸면 메인 화면의 요약과 AI 비서의 답에 바로 반영됩니다." },
   { sel: ".panel-head .export", title: "내보내기·기록 추가", body: "CSV(엑셀용)·JSON으로 전체 기록을 내려받고, + 기록 추가로 빈 날짜에 직접 한 줄을 넣습니다." },
   { sel: "#tour-btn", title: "가이드 다시 보기", body: "이 ? 버튼으로 언제든 다시 볼 수 있습니다. ← AI 비서는 채팅 화면으로, ◐는 다크 모드입니다." },
@@ -209,6 +235,7 @@ async function init() {
   $("day-cancel").onclick = () => $("day").close();
   $("day-del").onclick = deleteDay;
   $("day-edit").onclick = () => openDay(state.selected);
+  $("day-more").onclick = loadMore;
   $("day-remove").onclick = () => { state.editing = state.selected; deleteDay(); };
   $("export-csv").onclick = exportCSV;
   $("export-json").onclick = exportJSON;

@@ -208,6 +208,8 @@ dialog::backdrop { background: rgba(10, 9, 8, .5); }
 .day-memo { margin: 0; padding: var(--s4) var(--s4) 0; font-size: var(--f-lg); font-weight: 700; line-height: 1.4; }
 .day-cards { list-style: none; margin: 0; padding: var(--s4); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s3); }
 .day-cards .empty { grid-column: 1 / -1; }
+.day-more { display: block; margin: 0 auto var(--s4); padding: var(--s2) var(--s5); }
+.day-more[hidden] { display: none; }
 .skeleton-card { min-height: 140px; border-left-color: var(--line); animation: pulse 1.2s ease-out infinite; }
 
 /* 화면 가이드(투어) */

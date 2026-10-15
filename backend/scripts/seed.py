@@ -22,8 +22,8 @@ print()
 data_service.upsert_many(rows)
 print(f"적재 완료: {len(rows)}건 ({rows[-1]['date']} ~ {rows[0]['date']})")
 
-# 캘린더 카드 미리 생성(이미 있는 날짜는 건너뜀)
+# 캘린더 카드 앞 두 페이지(12장) 미리 생성(이미 있는 카드는 건너뜀)
 with ThreadPoolExecutor(8) as ex:
-    for i, _ in enumerate(ex.map(day_cards, (dt.date.fromisoformat(r["date"]) for r in rows))):
+    for i, _ in enumerate(ex.map(lambda r: day_cards(dt.date.fromisoformat(r["date"]), page=1), rows)):
         print(f"\r카드 {i + 1}/{len(rows)}", end="", flush=True)
 print()

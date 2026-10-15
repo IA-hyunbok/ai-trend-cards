@@ -80,26 +80,37 @@ DAY_COL = db.collection("day_cards")
 DAY_N = 6
 
 
-def day_cards(day: dt.date) -> list[dict]:
-    """캘린더용: 그날 인기 글 상위 DAY_N개 카드. 한 번 만들면 저장해 두고 다시 쓴다."""
+def day_cards(day: dt.date, page: int = 0) -> dict:
+    """캘린더용: 그날 인기 글을 추천 순으로 DAY_N개씩(page) 카드로. 만든 카드는 저장해 두고 다시 쓴다."""
     ref = DAY_COL.document(day.isoformat())
     snap = ref.get()
-    if snap.exists:
-        return snap.to_dict()["items"]
-    top = hn_service.stories(day)[:DAY_N]
-    items = [{"title": s["title"], "url": s["url"], "points": s["points"], "comments": s["comments"], **ko}
-             for s, ko in zip(top, _translate(top))]
-    # 점수가 굳은 날(이틀 전 이전)이고 번역이 성공했을 때만 저장한다. 아니면 다음 조회 때 다시 만든다
-    if items and any(i["summary_ko"] for i in items) and day <= dt.datetime.now(dt.timezone.utc).date() - dt.timedelta(days=2):
-        ref.set({"date": day.isoformat(), "items": items})
-    return items
+    doc = snap.to_dict() if snap.exists else {}
+    items, total = doc.get("items", []), doc.get("total")
+    end = (page + 1) * DAY_N
+    if total is None or len(items) < min(end, total):
+        stories = hn_service.stories(day)
+        total = len(stories)
+        have = {i["url"] for i in items}
+        rest = [s for s in stories if s["url"] not in have]
+        ok = True
+        while ok and rest and len(items) < min(end, total):  # 한 번에 DAY_N개씩 만든다(프롬프트 길이 제한)
+            chunk, rest = rest[:DAY_N], rest[DAY_N:]
+            cards = [{"title": s["title"], "url": s["url"], "points": s["points"], "comments": s["comments"], **ko}
+                     for s, ko in zip(chunk, _translate(chunk))]
+            ok = any(c["summary_ko"] for c in cards)
+            items = items + cards
+        # 점수가 굳은 날(이틀 전 이전)이고 번역이 성공했을 때만 저장한다. 아니면 다음 조회 때 다시 만든다
+        if ok and day <= dt.datetime.now(dt.timezone.utc).date() - dt.timedelta(days=2):
+            ref.set({"date": day.isoformat(), "items": items, "total": total})
+    return {"items": items[page * DAY_N:end], "total": total}
 
 
-def day_cards_range(start: dt.date, end: dt.date) -> dict[str, list[dict]]:
-    """캘린더가 한 달 치를 한 번에 받아 두는 용도. 저장된 날짜만 돌려준다(없는 날짜는 day_cards로 생성)."""
+def day_cards_range(start: dt.date, end: dt.date) -> dict[str, dict]:
+    """캘린더가 한 달 치 첫 페이지를 한 번에 받아 두는 용도. 저장된 날짜만 돌려준다(없는 날짜는 day_cards로 생성)."""
     q = DAY_COL.where(filter=FieldFilter("date", ">=", start.isoformat())).where(
         filter=FieldFilter("date", "<=", end.isoformat()))
-    return {d.id: d.to_dict()["items"] for d in q.stream()}
+    return {d.id: {"items": (x := d.to_dict())["items"][:DAY_N], "total": x.get("total", len(x["items"]))}
+            for d in q.stream()}
 
 
 def latest() -> dict | None:
@@ -116,7 +127,7 @@ def publish() -> dict:
     stat_day = utc_today - dt.timedelta(days=2)
     data_service.upsert_many([daily_row(stat_day)])
     try:
-        day_cards(stat_day)  # 캘린더에서 바로 뜨도록 미리 만든다(처음 조회 때 만들면 10초)
+        day_cards(stat_day, page=1)  # 캘린더에서 바로 뜨도록 두 페이지(12장)를 미리 만든다(처음 조회 때 만들면 10초)
     except Exception:
         log.exception("day cards failed %s", stat_day)
 

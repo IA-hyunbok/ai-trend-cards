@@ -53,7 +53,7 @@
         </span>
       </div>
       <p class="panel-desc meta"><b>Hacker News</b>는 미국 스타트업 투자사 Y Combinator가 운영하는 개발자 커뮤니티 뉴스 사이트입니다. 사람들이 올린 IT 글에 추천(점수)을 눌러 순위가 정해져서, 그날 개발자들이 무엇에 관심을 가졌는지 보여 줍니다.</p>
-      <p class="panel-desc meta">칸마다 <b>인기 N</b> = 그날 Hacker News에서 100점 넘게 추천받은 글이 N개(많을수록 칸 색이 진함), 그 아래는 <b>AI가 정의한 그날의 트렌드 한 줄</b>입니다. 날짜를 누르면 그 인기 글 중 추천이 가장 많은 6개가 카드로 나옵니다. 매일 아침 자동으로 추가되고, AI 비서는 이 기록을 보고 답합니다.</p>
+      <p class="panel-desc meta">칸마다 <b>인기 N</b> = 그날 Hacker News에서 100점 넘게 추천받은 글이 N개(많을수록 칸 색이 진함), 그 아래는 <b>AI가 정의한 그날의 트렌드 한 줄</b>입니다. 날짜를 누르면 그 인기 글이 추천 순서대로 카드로 나오고, 6개씩 더 볼 수 있습니다. 매일 아침 자동으로 추가되고, AI 비서는 이 기록을 보고 답합니다.</p>
       <figure class="chart">
         <svg id="chart" viewBox="0 0 320 100" preserveAspectRatio="none" role="img" aria-label="하루 인기 글 수 추이 그래프"></svg>
         <figcaption id="chart-cap" class="meta">전체 기간 하루 인기 글 수 · <span class="legend-avg">7일 평균</span></figcaption>
@@ -75,6 +75,7 @@
       <p id="day-memo" class="day-memo"></p>
       <p id="day-cap" class="panel-desc meta"></p>
       <ol id="day-cards" class="day-cards"></ol>
+      <button id="day-more" class="btn day-more" type="button" hidden></button>
     </section>
   </main>
 
