@@ -2,6 +2,7 @@
 import datetime as dt
 import json
 import os
+import re
 
 from openai import OpenAI
 
@@ -114,7 +115,8 @@ def chat(message: str, conversation_id: str | None) -> dict:
             except Exception as e:  # 잘못된 인자 등은 GPT에 돌려줘 스스로 고치게 한다
                 out = {"error": str(e)}
             messages.append({"role": "tool", "tool_call_id": call.id, "content": json.dumps(out, ensure_ascii=False)})
-    reply = msg.content or "(빈 응답)"
+    # 프롬프트로 금지해도 **굵게**·# 제목을 가끔 쓴다. 화면이 마크다운을 렌더링하지 않으니 기호만 지운다
+    reply = re.sub(r"\*\*(.+?)\*\*", r"\1", re.sub(r"(?m)^#{1,6} ", "", msg.content or "")) or "(빈 응답)"
 
     # GPT 호출이 성공한 뒤에만 질문+답을 한 번에 저장 → 반쪽 대화가 남지 않는다
     turn = [{"role": "user", "content": message}, {"role": "assistant", "content": reply}]

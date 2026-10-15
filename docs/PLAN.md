@@ -214,6 +214,7 @@ GitHub Actions (매일 KST 08:00 = UTC 23:00)
 | M5 배포 | ✅ 2026-10-15 — Render(무료, 공개 저장소 URL 연결) https://ai-trend-cards.onrender.com · Vercel(CLI 배포) https://ai-trend-cards.vercel.app · Actions 수동 1회 성공. 둘 다 push 자동 배포 아님 → 수동 재배포. 카드 요약 2~3문장 + 국내 기술 블로그 3편 추가 |
 | M6 README·스크린샷 | ✅ 2026-10-15 — 소개·배포 URL·스택·API·로컬 실행·환경변수, 스크린샷 3장(메인·모바일 채팅·디스코드, 디스코드는 계정명 잘라냄) |
 | M7 보너스 | ✅ 2026-10-15 — 채팅 Function Calling 3종(요약만으로 되는 질문은 도구 미사용, 기간 질문 get_data_range·카드 질문 get_cards 확인), MCP 서버(mcp 2.3 stdio, check.py로 목록·호출 확인), SVG 그래프(일별+7일 평균), CSV/JSON 내보내기, 다크 모드 |
+| M8 트렌드 캘린더 | ✅ 2026-10-15 — 숫자 목록만으로는 쓸모가 없다는 피드백 → memo를 "그날 트렌드 한 줄"(인기 글 상위 10개 제목을 GPT가 정의)로 바꾸고 1위 제목은 `top`으로 보존, 131일치 재적재. `calendar.html`: 월 달력(화제도 색 진하기) + 날짜 선택 시 그날 카드 6장 3열(`GET /api/cards/day/{day}`, `day_cards`에 저장) + 추가·수정·삭제. 메인의 데이터 패널은 캘린더로 이동, 정적 guide.html 삭제. README 필수 스크린샷 ①②③ 교체, 도구 호출 근거·흐름 정리 |
 
 ## 14. 준비물 (사용자)
 
