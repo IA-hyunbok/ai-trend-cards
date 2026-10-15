@@ -142,7 +142,7 @@ function showTab(id) {
     b.dataset.tab === id ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
 }
 /* ---------- 화면 가이드(투어) ---------- */
-// tab: 모바일(한 번에 한 패널)에서 먼저 열어야 하는 패널. mobile: 모바일에서만 보여 줄 단계
+// 단계 형식은 common.js의 initTour 참고
 const TOUR = [
   { sel: "#summary", title: "요약 줄", body: "저장된 데이터 전체 요약입니다. 평균 화제도는 하루에 100점 넘은 HN 인기 글 수의 평균이고, 최근 추세는 최근 7일 평균을 그 전 28일 평균과 비교한 값입니다. AI 비서도 이 숫자를 보고 답합니다." },
   { sel: "#panel-cards", tab: "panel-cards", title: "오늘의 카드", body: "매일 오전 8시에 바뀌는 카드뉴스입니다. 주황 카드 5장은 어제 Hacker News 인기 글, 옆으로 넘기면 나오는 파랑 카드 3장은 국내 기술 블로그 새 글입니다. 제목을 누르면 원문이 열립니다. 디스코드에도 같은 내용이 올라갑니다." },
@@ -152,75 +152,10 @@ const TOUR = [
   { sel: ".tabs", mobile: true, title: "화면 전환 탭", body: "휴대폰에서는 한 번에 한 화면만 보입니다. 아래 탭으로 카드·채팅·기록을 오가고, 캘린더는 위의 캘린더 버튼으로 엽니다." },
   { sel: "#tour-btn", title: "가이드 다시 보기", body: "이 ? 버튼을 누르면 언제든 가이드를 다시 볼 수 있습니다. 옆의 ◐ 버튼은 다크 모드입니다." },
 ];
-const isMobile = () => matchMedia("(max-width: 900px)").matches;
-let tourSteps = [], tourAt = 0, tourTab = null;
-
-function startTour() {
-  tourSteps = TOUR.filter((s) => !s.mobile || isMobile());
-  tourTab = document.querySelector(".tabs button[aria-current]")?.dataset.tab; // 끝나면 원래 탭으로
-  tourAt = 0;
-  $("tour").hidden = false;
-  showTourStep();
-  $("tour-next").focus();
-}
-function endTour() {
-  $("tour").hidden = true;
-  if (tourTab) showTab(tourTab);
-  try { localStorage.setItem("tour-done", "1"); } catch (e) {}
-}
-function showTourStep() {
-  const s = tourSteps[tourAt];
-  if (isMobile() && s.tab) showTab(s.tab);
-  const target = document.querySelector(s.sel);
-  target.scrollIntoView({ block: "nearest" });
-  $("tour-step").textContent = `${tourAt + 1} / ${tourSteps.length}`;
-  $("tour-title").textContent = s.title;
-  $("tour-body").textContent = s.body;
-  $("tour-prev").disabled = tourAt === 0;
-  $("tour-next").textContent = tourAt === tourSteps.length - 1 ? "완료" : "다음";
-  placeTour();
-}
-function placeTour() {
-  if ($("tour").hidden) return;
-  const r = document.querySelector(tourSteps[tourAt].sel).getBoundingClientRect();
-  const pad = 6, gap = 12, vw = innerWidth, vh = innerHeight;
-  Object.assign($("tour").querySelector(".tour-spot").style, {
-    left: `${r.left - pad}px`, top: `${r.top - pad}px`, width: `${r.width + pad * 2}px`, height: `${r.height + pad * 2}px`,
-  });
-  // 말풍선: 아래 → 위 → 오른쪽 → 왼쪽 순으로 들어갈 자리를 찾고, 없으면 화면 아래쪽에 띄운다
-  const tip = $("tour").querySelector(".tour-tip"), w = tip.offsetWidth, h = tip.offsetHeight;
-  const clampX = (x) => Math.min(Math.max(16, x), vw - w - 16);
-  const clampY = (y) => Math.min(Math.max(16, y), vh - h - 16);
-  let x, y;
-  if (r.bottom + pad + gap + h < vh) [x, y] = [clampX(r.left), r.bottom + pad + gap];
-  else if (r.top - pad - gap - h > 0) [x, y] = [clampX(r.left), r.top - pad - gap - h];
-  else if (r.right + pad + gap + w < vw) [x, y] = [r.right + pad + gap, clampY(r.top)];
-  else if (r.left - pad - gap - w > 0) [x, y] = [r.left - pad - gap - w, clampY(r.top)];
-  else [x, y] = [clampX((vw - w) / 2), vh - h - 16];
-  Object.assign(tip.style, { left: `${x}px`, top: `${y}px` });
-}
-function moveTour(d) {
-  const n = tourAt + d;
-  if (n < 0) return;
-  if (n >= tourSteps.length) return endTour();
-  tourAt = n;
-  showTourStep();
-}
-
 async function init() {
   $("theme").onclick = toggleTheme;
   $("new-chat").onclick = newChat;
-  $("tour-btn").onclick = startTour;
-  $("tour-next").onclick = () => moveTour(1);
-  $("tour-prev").onclick = () => moveTour(-1);
-  $("tour-skip").onclick = endTour;
-  document.addEventListener("keydown", (e) => {
-    if ($("tour").hidden) return;
-    if (e.key === "Escape") endTour();
-    if (e.key === "ArrowRight") moveTour(1);
-    if (e.key === "ArrowLeft") moveTour(-1);
-  });
-  addEventListener("resize", placeTour);
+  initTour(TOUR, "tour-done");
   $("chat-form").onsubmit = (e) => { e.preventDefault(); const v = $("chat-input").value; $("chat-input").value = ""; send(v); };
   $("chat-input").onkeydown = (e) => {
     if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("chat-form").requestSubmit(); }
@@ -234,10 +169,7 @@ async function init() {
     const failed = rs.find((r) => r.status === "rejected");
     if (failed) toast(failed.reason.message);
   });
-  // 첫 방문이면 데이터가 다 그려진 뒤 가이드를 띄운다
-  let seen = false;
-  try { seen = !!localStorage.getItem("tour-done"); } catch (e) {}
-  if (!seen) startTour();
+  startTourIfFirst(); // 데이터가 다 그려진 뒤
 }
 
 init();

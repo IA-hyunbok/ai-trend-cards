@@ -178,8 +178,29 @@ function exportJSON() {
   download("hn-trend.json", JSON.stringify([...state.data].reverse(), null, 2), "application/json");
 }
 
+/* ---------- 화면 가이드(투어). 엔진은 common.js ---------- */
+// 보고 있는 달의 가장 최근 기록을 골라 아래 카드 영역을 열어 둔다(카드 단계 시연용)
+function selectForTour() {
+  if (state.selected) return;
+  const d = state.data.find((x) => x.date.startsWith(state.month)) || state.data[0];
+  if (!d) return;
+  state.month = d.date.slice(0, 7);
+  return selectDay(d.date);
+}
+const TOUR = [
+  { sel: ".month-nav", title: "달 이동", body: "‹ › 로 달을 넘깁니다. 기록은 2026년 6월부터 있고, 매일 아침 8시에 이틀 전 날짜가 한 칸씩 채워집니다(HN 점수가 다 쌓인 뒤에 확정하기 때문)." },
+  { sel: ".cal-grid .has", title: "칸 읽는 법", body: "맨 위 숫자는 날짜, 주황 숫자는 그날 Hacker News에서 100점 넘게 추천받은 글 수입니다. 많을수록 칸 색이 진합니다. 아래 문장은 그날 인기 글 상위 10개 제목을 보고 AI가 정의한 '그날의 트렌드 한 줄'입니다. 점선 칸은 기록이 없는 날로, 누르면 직접 추가할 수 있습니다." },
+  { sel: ".chart", title: "전체 기간 그래프", body: "모든 날의 인기 글 수를 선으로 그렸습니다. 회색은 그날그날 값, 주황은 7일 평균입니다. 마우스를 올리면 날짜별 값과 트렌드가 나오고, 누르면 그 날짜로 이동합니다." },
+  { sel: "#day-memo", before: selectForTour, title: "날짜를 누르면", body: "그날의 트렌드 한 줄이 크게 나오고, 오른쪽 위에 그날 인기 글 수가 표시됩니다." },
+  { sel: "#day-cards li", before: selectForTour, title: "그날의 인기 글 카드", body: "그날 추천을 가장 많이 받은 HN 글 6개를 한국어 제목과 2~3문장 요약으로 정리한 카드입니다. 제목을 누르면 원문이 열리고, ▲는 추천 수입니다." },
+  { sel: ".day-panel .export", before: selectForTour, title: "고치기·지우기", body: "트렌드 한 줄이나 인기 글 수를 직접 고치거나 그날 기록을 지웁니다. 바꾸면 메인 화면의 요약과 AI 비서의 답에 바로 반영됩니다." },
+  { sel: ".panel-head .export", title: "내보내기·기록 추가", body: "CSV(엑셀용)·JSON으로 전체 기록을 내려받고, + 기록 추가로 빈 날짜에 직접 한 줄을 넣습니다." },
+  { sel: "#tour-btn", title: "가이드 다시 보기", body: "이 ? 버튼으로 언제든 다시 볼 수 있습니다. ← AI 비서는 채팅 화면으로, ◐는 다크 모드입니다." },
+];
+
 async function init() {
   $("theme").onclick = toggleTheme;
+  initTour(TOUR, "tour-done-cal");
   $("prev").onclick = () => moveMonth(-1);
   $("next").onclick = () => moveMonth(1);
   $("add").onclick = () => openDay(null);
@@ -193,7 +214,8 @@ async function init() {
   $("f-date").max = today;
   state.month = today.slice(0, 7);
   if (!(await wake())) return;
-  try { await Promise.all([loadData(), prefetchMonth()]); } catch (e) { toast(e.message); }
+  try { await Promise.all([loadData(), prefetchMonth()]); } catch (e) { return toast(e.message); }
+  startTourIfFirst(); // 첫 방문이면 달력이 그려진 뒤
 }
 
 init();
