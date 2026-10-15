@@ -2,6 +2,7 @@
 
 Hacker News 인기 글로 IT 화제도 시계열을 쌓고, 그 요약을 GPT에 주입해 트렌드 질문에 답하며, 매일 아침 한국어 카드뉴스를 웹과 디스코드에 올리는 AI 비서.
 코디세이 미션 "8_AI Agent 개발: 나만의 AI 비서 구축" 결과물. 설계·결정 기록은 [docs/PLAN.md](docs/PLAN.md).
+작업 과정(사용한 스킬·도구, 검증 방법, 고친 문제)은 **[docs/WORKLOG.md](docs/WORKLOG.md)**.
 
 ## 배포 URL
 
