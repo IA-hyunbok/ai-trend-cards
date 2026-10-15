@@ -29,6 +29,16 @@ Hacker News 인기 글로 IT 화제도 시계열을 쌓고, 그 요약을 GPT에
 - **데이터 관리**: 화면에서 추가·수정·삭제하면 요약과 AI 답변에 바로 반영됩니다.
 - **화면**: 데스크톱 3단 / 900px 이하 하단 탭, 다크 모드, 콜드스타트 안내
 
+**보너스**
+- **Function Calling**: 채팅 GPT가 도구 3개를 스스로 골라 호출합니다. 답변 아래에 `🔧 get_data_range 조회`처럼 사용한 도구가 표시됩니다.
+  - `get_summary`: 전체 요약
+  - `get_data_range(start, end)`: 요약에 없는 특정 기간의 일별 값과 헤드라인
+  - `get_cards`: 최신 카드뉴스와 기술 블로그
+- **MCP 서버**(`mcp_server/`): 같은 도구 3개를 Claude Desktop·Claude Code 같은 MCP 클라이언트에 노출합니다(아래 연결 방법).
+- **그래프**: 데이터 관리 패널에 일별 화제도와 7일 이동평균 SVG 그래프. 마우스·터치로 날짜별 값을 봅니다.
+- **내보내기**: 전체 데이터를 CSV(엑셀 한글 BOM 포함)와 JSON으로 내려받습니다.
+- **다크 모드**: 우상단 버튼, 선택은 브라우저에 저장됩니다.
+
 ## 스크린샷
 
 | 메인 화면 | AI 비서 (모바일) | 디스코드 카드뉴스 |
@@ -103,6 +113,27 @@ python3 -m http.server 5500
 
 프론트(Vercel): `API_BASE_URL` = 백엔드 주소
 GitHub Actions 시크릿: `API_BASE_URL`, `CRON_SECRET`
+
+## MCP 서버 연결
+
+배포된 API를 HTTP로 호출하므로 Firebase 키 없이 동작합니다.
+
+```bash
+pip install -r mcp_server/requirements.txt
+python mcp_server/check.py   # stdio로 띄워 도구 3개 목록·호출 확인
+```
+
+Claude Code에 등록:
+
+```bash
+claude mcp add ai-trend-cards -- python /절대경로/ai-trend-cards/mcp_server/server.py
+```
+
+Claude Desktop(`claude_desktop_config.json`):
+
+```json
+{ "mcpServers": { "ai-trend-cards": { "command": "python", "args": ["/절대경로/ai-trend-cards/mcp_server/server.py"] } } }
+```
 
 ## 자체 점검
 

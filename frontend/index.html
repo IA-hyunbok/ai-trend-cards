@@ -61,7 +61,15 @@
       <div class="panel-head">
         <h2 id="h-data">데이터 관리</h2>
         <span id="data-count" class="meta"></span>
+        <span class="export">
+          <button id="export-csv" class="btn btn-ghost" type="button">CSV</button>
+          <button id="export-json" class="btn btn-ghost" type="button">JSON</button>
+        </span>
       </div>
+      <figure class="chart">
+        <svg id="chart" viewBox="0 0 320 100" preserveAspectRatio="none" role="img" aria-label="일별 화제도 추이 그래프"></svg>
+        <figcaption id="chart-cap" class="meta">일별 화제도 · <span class="legend-avg">7일 평균</span></figcaption>
+      </figure>
       <form id="data-form" class="data-form">
         <div class="field">
           <label for="f-date">날짜</label>

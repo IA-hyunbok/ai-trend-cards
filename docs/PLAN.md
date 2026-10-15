@@ -213,7 +213,7 @@ GitHub Actions (매일 KST 08:00 = UTC 23:00)
 | M4 프론트 | ✅ 2026-10-14 — 5개 영역 로컬 동작(CRUD·불러오기·채팅), 390px 모바일 탭, 다크 모드 |
 | M5 배포 | ✅ 2026-10-15 — Render(무료, 공개 저장소 URL 연결) https://ai-trend-cards.onrender.com · Vercel(CLI 배포) https://ai-trend-cards.vercel.app · Actions 수동 1회 성공. 둘 다 push 자동 배포 아님 → 수동 재배포. 카드 요약 2~3문장 + 국내 기술 블로그 3편 추가 |
 | M6 README·스크린샷 | ✅ 2026-10-15 — 소개·배포 URL·스택·API·로컬 실행·환경변수, 스크린샷 3장(메인·모바일 채팅·디스코드, 디스코드는 계정명 잘라냄) |
-| M7 보너스 | tools(`get_summary`, `get_data_range`, `get_cards`) + MCP 서버, 화제도 그래프(SVG), CSV 내보내기, 다크 모드 |
+| M7 보너스 | ✅ 2026-10-15 — 채팅 Function Calling 3종(요약만으로 되는 질문은 도구 미사용, 기간 질문 get_data_range·카드 질문 get_cards 확인), MCP 서버(mcp 2.3 stdio, check.py로 목록·호출 확인), SVG 그래프(일별+7일 평균), CSV/JSON 내보내기, 다크 모드 |
 
 ## 14. 준비물 (사용자)
 

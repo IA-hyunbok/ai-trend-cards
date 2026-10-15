@@ -83,7 +83,9 @@ function renderMessages() {
     ));
     return;
   }
-  box.replaceChildren(...state.messages.map((m) => el("div", { className: `msg ${m.role}${m.typing ? " typing" : ""}`, textContent: m.content })));
+  box.replaceChildren(...state.messages.map((m) => el("div", { className: `msg ${m.role}${m.typing ? " typing" : ""}` },
+    m.content,
+    m.tools?.length ? el("span", { className: "tools", textContent: `🔧 ${m.tools.join(", ")} 조회` }) : null)));
   box.scrollTop = box.scrollHeight;
 }
 
@@ -99,7 +101,7 @@ async function send(text) {
     const r = await api("/api/chat", { method: "POST", body: JSON.stringify({ message: text, conversation_id: state.conversationId }) });
     if (!state.conversationId) $("chat-title").textContent = text.slice(0, 30); // 서버 제목 규칙과 같다
     state.conversationId = r.conversation_id;
-    state.messages.splice(-1, 1, { role: "assistant", content: r.reply });
+    state.messages.splice(-1, 1, { role: "assistant", content: r.reply, tools: r.tools_used });
     loadConversations();
   } catch (e) {
     state.messages.splice(-2, 2); // 실패한 턴은 서버에도 저장되지 않으므로 화면에서도 뺀다
@@ -169,6 +171,7 @@ async function loadData() {
 }
 function renderData(flashDate) {
   $("data-count").textContent = `최근 ${state.data.length}건`;
+  renderChart();
   const ul = $("data-list");
   if (!state.data.length) {
     ul.replaceChildren(el("li", { className: "empty", textContent: "데이터가 없어요. 위에서 추가하세요." }));
@@ -183,6 +186,56 @@ function renderData(flashDate) {
       el("button", { type: "button", className: "del", textContent: "삭제", onclick: () => deleteData(d) })),
   )));
 }
+/* ---------- 그래프(SVG) · 내보내기 ---------- */
+const SVG_NS = "http://www.w3.org/2000/svg";
+function renderChart() {
+  const svg = $("chart"), cap = $("chart-cap");
+  const rows = [...state.data].reverse(); // 날짜 오름차순
+  svg.replaceChildren();
+  if (rows.length < 2) return;
+  const W = 320, H = 100, vals = rows.map((r) => r.value);
+  const max = Math.max(...vals), min = Math.min(...vals);
+  const x = (i) => (i / (rows.length - 1)) * W;
+  const y = (v) => H - ((v - min) / (max - min || 1)) * H;
+  const avg = vals.map((_, i) => { const w = vals.slice(Math.max(0, i - 6), i + 1); return w.reduce((a, b) => a + b, 0) / w.length; });
+  const line = (arr, cls) => {
+    const p = document.createElementNS(SVG_NS, "polyline");
+    p.setAttribute("points", arr.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" "));
+    p.setAttribute("class", cls);
+    return p;
+  };
+  const cursor = document.createElementNS(SVG_NS, "line");
+  cursor.setAttribute("class", "cursor");
+  cursor.setAttribute("y1", 0); cursor.setAttribute("y2", H);
+  cursor.style.display = "none";
+  svg.append(line(vals, "daily"), line(avg, "avg"), cursor);
+  const defaultCap = '일별 화제도 · <span class="legend-avg">7일 평균</span>';
+  // 마우스·터치 위치에서 가장 가까운 날짜의 값을 캡션에 보여 준다
+  svg.onpointermove = (e) => {
+    const r = svg.getBoundingClientRect();
+    const i = Math.round(((e.clientX - r.left) / r.width) * (rows.length - 1));
+    const d = rows[Math.min(rows.length - 1, Math.max(0, i))];
+    cursor.setAttribute("x1", x(rows.indexOf(d))); cursor.setAttribute("x2", x(rows.indexOf(d)));
+    cursor.style.display = "";
+    cap.textContent = `${d.date} · ${d.value}건 · 7일 평균 ${avg[rows.indexOf(d)].toFixed(1)}`;
+  };
+  svg.onpointerleave = () => { cursor.style.display = "none"; cap.innerHTML = defaultCap; };
+}
+
+function download(name, text, type) {
+  const a = el("a", { href: URL.createObjectURL(new Blob([text], { type })), download: name });
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function exportCSV() {
+  const q = (s) => `"${String(s).replace(/"/g, '""')}"`; // 헤드라인의 쉼표·따옴표 대비
+  const rows = [...state.data].reverse().map((d) => [d.date, d.value, q(d.memo)].join(","));
+  download("hn-trend.csv", "﻿" + ["date,value,memo", ...rows].join("\n"), "text/csv;charset=utf-8"); // BOM: 엑셀 한글
+}
+function exportJSON() {
+  download("hn-trend.json", JSON.stringify([...state.data].reverse(), null, 2), "application/json");
+}
+
 function startEdit(d) {
   state.editing = d.date;
   $("f-date").value = d.date;
@@ -257,6 +310,8 @@ async function init() {
   $("new-chat").onclick = newChat;
   $("data-form").onsubmit = submitData;
   $("data-cancel").onclick = resetForm;
+  $("export-csv").onclick = exportCSV;
+  $("export-json").onclick = exportJSON;
   $("f-date").max = new Date().toISOString().slice(0, 10);
   $("chat-form").onsubmit = (e) => { e.preventDefault(); const v = $("chat-input").value; $("chat-input").value = ""; send(v); };
   $("chat-input").onkeydown = (e) => {

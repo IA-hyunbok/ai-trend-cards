@@ -113,6 +113,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     conversation_id: str
     reply: str
+    tools_used: list[str] = Field(default=[], description="이번 답변에서 GPT가 호출한 도구(Function Calling)")
 
 
 class CardItem(BaseModel):
